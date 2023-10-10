@@ -314,91 +314,91 @@ class JavaCodeAPIView(APIView):
         return Response(status=204)
 
     
-class MermaidAPIView(APIView):
-    permission_classes = [CustomIsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+# class MermaidAPIView(APIView):
+#     permission_classes = [CustomIsAuthenticated]
+#     authentication_classes = [TokenAuthentication]
 
-    def get_object(self, file_id, logic_id=None):
-        try:
-            file = FileUpload.objects.get(fileId=file_id, user=self.request.user)
-            if logic_id:
-                logic = Logic.objects.get(id=logic_id, file=file)
-                return logic
-            return file
-        except FileUpload.DoesNotExist:
-            raise Http404
-        except Logic.DoesNotExist:
-            raise Http404
+#     def get_object(self, file_id, logic_id=None):
+#         try:
+#             file = FileUpload.objects.get(fileId=file_id, user=self.request.user)
+#             if logic_id:
+#                 logic = Logic.objects.get(id=logic_id, file=file)
+#                 return logic
+#             return file
+#         except FileUpload.DoesNotExist:
+#             raise Http404
+#         except Logic.DoesNotExist:
+#             raise Http404
 
-    def generate_diagrams(self, file_id, logic_id):
-        file = self.get_object(file_id)
-        logic = self.get_object(file_id, logic_id)
-        logic_str = logic.logic
-        mermaidDiagramClass = generateClassDiagram(logic_str)
-        mermaidDiagramFlow = generateFlowChart(logic_str)
+#     def generate_diagrams(self, file_id, logic_id):
+#         file = self.get_object(file_id)
+#         logic = self.get_object(file_id, logic_id)
+#         logic_str = logic.logic
+#         mermaidDiagramClass = generateClassDiagram(logic_str)
+#         mermaidDiagramFlow = generateFlowChart(logic_str)
         
-        diagram_data = {
-            'classDiagram': mermaidDiagramClass,
-            'flowChart': mermaidDiagramFlow,
-            'logic': logic_id,
-            'user': self.request.user,
-            'file': file_id
-        }
+#         diagram_data = {
+#             'classDiagram': mermaidDiagramClass,
+#             'flowChart': mermaidDiagramFlow,
+#             'logic': logic_id,
+#             'user': self.request.user,
+#             'file': file_id
+#         }
         
-        existing_diagram = MermaidDiagrams.objects.filter(file=file, logic=logic, user=self.request.user).first()
+#         existing_diagram = MermaidDiagrams.objects.filter(file=file, logic=logic, user=self.request.user).first()
         
-        if existing_diagram:
-            serializer = MermaidDiagramSerializer(existing_diagram, data=diagram_data)
-        else:
-            serializer = MermaidDiagramSerializer(data=diagram_data)
+#         if existing_diagram:
+#             serializer = MermaidDiagramSerializer(existing_diagram, data=diagram_data)
+#         else:
+#             serializer = MermaidDiagramSerializer(data=diagram_data)
         
-        if serializer.is_valid():
-            serializer.save()
-            return serializer.data
-        else:
-            return None
+#         if serializer.is_valid():
+#             serializer.save()
+#             return serializer.data
+#         else:
+#             return None
 
-    def get(self, request, file_id, logic_id):
-        file = self.get_object(file_id)
-        logic = self.get_object(file_id, logic_id)
-        diagram = MermaidDiagrams.objects.get(file=file, logic=logic, user=request.user)
-        serializer = MermaidDiagramSerializer(diagram)
-        return Response(serializer.data)
+#     def get(self, request, file_id, logic_id):
+#         file = self.get_object(file_id)
+#         logic = self.get_object(file_id, logic_id)
+#         diagram = MermaidDiagrams.objects.get(file=file, logic=logic, user=request.user)
+#         serializer = MermaidDiagramSerializer(diagram)
+#         return Response(serializer.data)
 
-    def post(self, request, file_id, logic_id):
-        if not file_id:
-            return Response({'error': 'file_id is required'}, status=400)
-        try:
-            logic = self.get_object(file_id, logic_id)
-        except FileUpload.DoesNotExist:
-            return Response({'error': 'Logic not generated'}, status=404)
-        file = self.get_object(file_id)
-        logicObj = self.get_object(file_id, logic_id)
-        try:
-            diagram = MermaidDiagrams.objects.get(file=file, logic=logicObj, user=request.user)
-            serializer = MermaidDiagramSerializer(diagram)
-            return Response(serializer.data)
-        except MermaidDiagrams.DoesNotExist:
-            new_diagram_data = self.generate_diagrams(file_id, logic_id)
-            if new_diagram_data:
-                return Response(new_diagram_data, status=201)
-            else:
-                return Response({'error': 'Failed to generate diagrams'}, status=400)
+#     def post(self, request, file_id, logic_id):
+#         if not file_id:
+#             return Response({'error': 'file_id is required'}, status=400)
+#         try:
+#             logic = self.get_object(file_id, logic_id)
+#         except FileUpload.DoesNotExist:
+#             return Response({'error': 'Logic not generated'}, status=404)
+#         file = self.get_object(file_id)
+#         logicObj = self.get_object(file_id, logic_id)
+#         try:
+#             diagram = MermaidDiagrams.objects.get(file=file, logic=logicObj, user=request.user)
+#             serializer = MermaidDiagramSerializer(diagram)
+#             return Response(serializer.data)
+#         except MermaidDiagrams.DoesNotExist:
+#             new_diagram_data = self.generate_diagrams(file_id, logic_id)
+#             if new_diagram_data:
+#                 return Response(new_diagram_data, status=201)
+#             else:
+#                 return Response({'error': 'Failed to generate diagrams'}, status=400)
 
-    def put(self, request, file_id, logic_id):
+#     def put(self, request, file_id, logic_id):
         
-        new_diagram_data = self.generate_diagrams(file_id, logic_id)
-        if new_diagram_data:
-            return Response(new_diagram_data)
-        else:
-            return Response({'error': 'Failed to generate diagrams'}, status=400)
+#         new_diagram_data = self.generate_diagrams(file_id, logic_id)
+#         if new_diagram_data:
+#             return Response(new_diagram_data)
+#         else:
+#             return Response({'error': 'Failed to generate diagrams'}, status=400)
     
-    def delete(self, request, file_id, logic_id):
-        logic = self.get_object(file_id, logic_id)
-        file = self.get_object(file_id)
-        code = MermaidDiagrams.objects.filter(file=file, logic=logic, user=request.user).first()
-        code.delete()
-        return Response(status=204)    
+#     def delete(self, request, file_id, logic_id):
+#         logic = self.get_object(file_id, logic_id)
+#         file = self.get_object(file_id)
+#         code = MermaidDiagrams.objects.filter(file=file, logic=logic, user=request.user).first()
+#         code.delete()
+#         return Response(status=204)    
         
         
 class JavaCompilerView(APIView):
@@ -451,9 +451,9 @@ class LogicDetailAPIViewNew(APIView):
             logic = Logic.objects.filter(file=file, user=request.user).first()
             serializer = LogicSerializer(logic)
             return Response(serializer.data,status=200)
-        var="RPG"
+        source = request.data.get('source')
         code=file.file
-        businessLogic =  code_to_business_logic(code,var)
+        businessLogic =  code_to_business_logic(code,source)
         logicData = {
             'logic':businessLogic,
             'user':request.user,
@@ -465,6 +465,7 @@ class LogicDetailAPIViewNew(APIView):
             return Response(serializer.data, status=201)
         else:
             return Response(serializer.errors, status=200)
+ 
 
     def put(self, request, file_id, logic_id):
         logic = self.get_object(file_id, logic_id)
@@ -481,7 +482,7 @@ class LogicDetailAPIViewNew(APIView):
     
 
 
-class JavaCodeAPIViewNew(APIView):
+class CodeGenAPIViewNew(APIView):
     permission_classes = [CustomIsAuthenticated]
     authentication_classes = [TokenAuthentication]
 
@@ -497,12 +498,12 @@ class JavaCodeAPIViewNew(APIView):
         except Logic.DoesNotExist:
             raise Http404
 
-    def generate_code(self, file_id, logic_id):
+    def generate_code(self, file_id, logic_id, source, destination):
         file = self.get_object(file_id)
         logic = self.get_object(file_id, logic_id)
         logic_str = logic.logic
-        var="RPG"
-        generated_code = business_logic_to_code(logic_str,var) 
+        # var="RPG"
+        generated_code = business_logic_to_code(logic_str,source, destination) 
         code_data = {
             'code': generated_code,
             'logic': logic_id,
@@ -547,7 +548,9 @@ class JavaCodeAPIViewNew(APIView):
             serializer = JavaCodeSerializer(code)
             return Response(serializer.data, status=200)
 
-        new_code_data = self.generate_code(file_id, logic_id)
+        source = request.data.get('source')
+        destination = request.data.get('destination')
+        new_code_data = self.generate_code(file_id, logic_id, source, destination)
 
         if new_code_data:
             return Response(new_code_data, status=201)
@@ -555,7 +558,9 @@ class JavaCodeAPIViewNew(APIView):
             return Response({'error': 'Failed to generate code'}, status=400)
 
     def put(self, request, file_id, logic_id):
-        new_code_data = self.generate_code(file_id, logic_id)
+        source = request.data.get('source')
+        destination = request.data.get('destination')
+        new_code_data = self.generate_code(file_id, logic_id, source, destination)
 
         if new_code_data:
             return Response(new_code_data)
@@ -586,13 +591,13 @@ class MermaidAPIViewNew(APIView):
         except Logic.DoesNotExist:
             raise Http404
 
-    def generate_diagrams(self, file_id, logic_id):
+    def generate_diagrams(self, file_id, logic_id, source, destination):
         file = self.get_object(file_id)
         logic = self.get_object(file_id, logic_id)
         logic_str = logic.logic
-        var="RPG"
-        mermaidDiagramClass = business_logic_to_mermaid_diagram(logic_str,var)
-        mermaidDiagramFlow = business_logic_to_mermaid_flowchart(logic_str,var)
+        # var="RPG"
+        mermaidDiagramClass = business_logic_to_mermaid_diagram(logic_str,source, destination)
+        mermaidDiagramFlow = business_logic_to_mermaid_flowchart(logic_str,source, destination)
         
         diagram_data = {
             'classDiagram': mermaidDiagramClass,
@@ -636,15 +641,18 @@ class MermaidAPIViewNew(APIView):
             serializer = MermaidDiagramSerializer(diagram)
             return Response(serializer.data)
         except MermaidDiagrams.DoesNotExist:
-            new_diagram_data = self.generate_diagrams(file_id, logic_id)
+            source = request.data.get('source')
+            destination = request.data.get('destination')
+            new_diagram_data = self.generate_diagrams(file_id, logic_id, source, destination)
             if new_diagram_data:
                 return Response(new_diagram_data, status=201)
             else:
                 return Response({'error': 'Failed to generate diagrams'}, status=400)
 
     def put(self, request, file_id, logic_id):
-        
-        new_diagram_data = self.generate_diagrams(file_id, logic_id)
+        source = request.data.get('source')
+        destination = request.data.get('destination')
+        new_diagram_data = self.generate_diagrams(file_id, logic_id, source, destination)
         if new_diagram_data:
             return Response(new_diagram_data)
         else:
