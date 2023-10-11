@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import theme, { colorScheme } from './assets/components/colors';
 import SideNav from './assets/components/sidenav';
-import { Box, Button, IconButton, TextField, Typography, createTheme } from '@mui/material';
+import { Box, Button, IconButton, TextField, Tab, Tabs, Typography, createTheme } from '@mui/material';
 import { styled } from '@mui/system';
 import React, { useState, useRef, useEffect } from 'react';
 import { Close, Cloud, CloudUpload, FileUpload, Upload } from '@mui/icons-material';
@@ -10,6 +10,7 @@ import { Cross, File } from 'styled-icons/boxicons-regular';
 import { FileArrowUp, FileArrowUpFill, FileEarmarkArrowUpFill } from 'styled-icons/bootstrap';
 import { FilePen } from 'styled-icons/fa-solid';
 import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 
 
 
@@ -72,26 +73,68 @@ const StyledTextField = styled(TextField)({
 
 });
 
+function CustomTabPanel(props) {
+    const { children, value, index, ...other } = props;
+
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`simple-tabpanel-${index}`}
+            aria-labelledby={`simple-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box sx={{ p: 3 }}>
+                    <Typography>{children}</Typography>
+                </Box>
+            )}
+        </div>
+    );
+}
+
+CustomTabPanel.propTypes = {
+    children: PropTypes.node,
+    index: PropTypes.number.isRequired,
+    value: PropTypes.number.isRequired,
+};
+
+function a11yProps(index) {
+    return {
+        id: `simple-tab-${index}`,
+        'aria-controls': `simple-tabpanel-${index}`,
+    };
+}
 
 export default function UploadScreen(props) {
+    const [value, setValue] = React.useState(0);
+
+    const handleChange = (event, newValue) => {
+        setValue(newValue);
+    };
     const [isProject, setIsProject] = useState(false);
     const [isDropped, setIsDropped] = useState(false);
     const [isRequired, setIsRequired] = useState(false);
     useEffect(() => {
-        if(isProject^isDropped){
+        if (isProject ^ isDropped) {
             setIsRequired(true)
         }
-        else{
+        else {
             setIsRequired(false)
         }
-      }, [isProject, isDropped]);
-    
+    }, [isProject, isDropped]);
+
     const [fileContent, setFileContent] = useState('');
     const [projectName, setProjectName] = useState('');
+    const [branchName, setBranchName] = useState('');
+    const [repositoryURL, setRepositoryURL] = useState('');
     const [droppedFiles, setDroppedFiles] = useState([]);
-   
+
 
     const [projectHelper, setProjectHelper] = useState('');
+    const [URLHelper, setURLHelper] = useState('');
+    const [branchHelper, setBranchHelper] = useState('');
+
     const fileInputRef = useRef(null);
     const navigate = useNavigate()
     const handleDrop = (event) => {
@@ -113,19 +156,19 @@ export default function UploadScreen(props) {
         if (droppedFiles.length > 0) {
             setIsDropped(true)
         }
-        else{
+        else {
             setIsDropped(false)
         }
     };
 
     const handleInputChange = (event) => {
         const files = Array.from(event.target.files);
-        document.getElementById('file-error').style.display='none';
+        document.getElementById('file-error').style.display = 'none';
         if (files.length > 0) {
             setDroppedFiles((prevFiles) => [...prevFiles, ...files]);
             setIsDropped(true)
         }
-        else{
+        else {
             setIsDropped(false)
         }
     };
@@ -133,26 +176,40 @@ export default function UploadScreen(props) {
     const handleRemoveFile = (file) => {
         setDroppedFiles((prevFiles) => prevFiles.filter((f) => f !== file));
     };
-    const handleRequired = () =>{
+    const handleRequired = () => {
         console.log('here')
-        if(droppedFiles.length===0){
-            if(projectName === ''){
+        if (droppedFiles.length === 0) {
+            if (projectName === '') {
                 setProjectHelper('Required');
-                document.getElementById('file-error').style.display='block';
+                document.getElementById('file-error').style.display = 'block';
             }
         }
         else if (projectName === '') {
             setProjectHelper('Required');
         }
-        else{
-            if(droppedFiles.length>0){
+        else {
+            if (droppedFiles.length > 0) {
                 setProjectHelper('')
                 handleUpload()
             }
-            else{
-                document.getElementById('file-error').style.display='block';
+            else {
+                document.getElementById('file-error').style.display = 'block';
             }
-            
+
+        }
+    };
+    const handleGitRequired = () => {
+        if (projectName === '') {
+            setProjectHelper('Required');
+        }
+        if (repositoryURL === '') {
+            setURLHelper('Required');
+        }
+        if (branchName === '') {
+            setBranchHelper('Required');
+        }
+        if(projectName !== '' && repositoryURL !== '' && branchName !== '') {
+            handleGitClone()
         }
     };
     const handleUpload = () => {
@@ -164,36 +221,36 @@ export default function UploadScreen(props) {
 
         if (droppedFiles.length === 1 && droppedFiles[0].type === 'application/zip') {
             // Handle zip file upload
-                const zipFile = droppedFiles[0];
-                formData.append('zip_file', zipFile);
+            const zipFile = droppedFiles[0];
+            formData.append('zip_file', zipFile);
 
-                fetch('http://127.0.0.1:8000/upload', {
-                    method: 'POST',
-                    headers: headers,
-                    body: formData,
+            fetch('http://127.0.0.1:8000/upload', {
+                method: 'POST',
+                headers: headers,
+                body: formData,
+
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    const responseData = data;
+                    if (responseData.detail === 'Invalid token') {
+                        props.onNotLoggedIn();
+                        return;
+                    }
+                    navigate('/repositories')
 
                 })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        const responseData = data;
-                        if (responseData.detail === 'Invalid token') {
-                            props.onNotLoggedIn(); 
-                            return;
-                        }
-                        navigate('/repositories')
+                .catch((error) => {
+                    // Handle error
+                    console.error(error);
+                });
 
-                    })
-                    .catch((error) => {
-                        // Handle error
-                        console.error(error);
-                    });
-                
-                
+
         } else {
 
 
 
-           
+
             // Handle individual file uploads
             droppedFiles.forEach((file) => {
                 formData.append('files', file);
@@ -212,11 +269,44 @@ export default function UploadScreen(props) {
                     // Handle error
                     console.error(error);
                 });
-        
-    }
+
+        }
     };
 
-   
+    const handleGitClone = () => {
+        const jwtToken = sessionStorage.getItem("jwt")
+        const formData = new FormData();
+        formData.append('repository_name', projectName);
+        formData.append('repository_url', repositoryURL);
+        formData.append('branch_name', branchName);
+        const headers = new Headers();
+        headers.append('Authorization', 'Bearer ' + jwtToken);
+
+
+        fetch('http://127.0.0.1:8000/clone-repository/', {
+            method: 'POST',
+            headers: headers,
+            body: formData,
+
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                const responseData = data;
+                if (responseData.detail === 'Invalid token') {
+                    props.onNotLoggedIn();
+                    return;
+                }
+                navigate('/repositories')
+
+            })
+            .catch((error) => {
+                // Handle error
+                console.error(error);
+            });
+
+
+        
+    };
 
     return (
 
@@ -230,11 +320,19 @@ export default function UploadScreen(props) {
 
 
                         >
-                            <div className='flex flex-row  uploadText'>
-                                <p>
+                            <div className='flex flex-row justify-center uploadText'>
+                                {/* <p>
                                     Upload
-                                </p>
+                                </p> */}
+                                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                                    <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
+                                        <Tab label="Upload" {...a11yProps(0)} />
+                                        <Tab label="Clone Repository" {...a11yProps(1)} />
+                                        
+                                    </Tabs>
+                                </Box>
                             </div>
+                            <CustomTabPanel value={value} index={0}>
                             <div className="files flex mt-4 p-5 justify-between">
                                 <div className="flex items-center w-full">
                                     <StyledTextField
@@ -247,13 +345,13 @@ export default function UploadScreen(props) {
                                         onChange={(event) => {
                                             setProjectName(event.target.value)
                                             setProjectHelper('')
-                                        }} 
-                                            sx={{
-                                                '.css-4ttn6k-MuiFormHelperText-root':{
-                                                    color: 'red'
-                                                }
-                                            }}
-                                        />
+                                        }}
+                                        sx={{
+                                            '.css-4ttn6k-MuiFormHelperText-root': {
+                                                color: 'red'
+                                            }
+                                        }}
+                                    />
                                 </div>
 
                             </div>
@@ -279,7 +377,7 @@ export default function UploadScreen(props) {
                                 <p className='max-file-size-25-mb'>
                                     Max. file size: 25MB
                                 </p>
-                                <p id='file-error' style={{color: 'red',display: 'none'}}>
+                                <p id='file-error' style={{ color: 'red', display: 'none' }}>
                                     File must be required*
                                 </p>
 
@@ -305,9 +403,87 @@ export default function UploadScreen(props) {
                                 ))}
                             </div>
 
-                            <Button className="continue mt-8 p-2 mb-5"  onClick={handleRequired}>
+                            <Button className="continue mt-8 p-2 mb-5" onClick={handleRequired}>
                                 <p className="continueText">Continue</p>
                             </Button>
+      </CustomTabPanel>
+      <CustomTabPanel value={value} index={1} >
+      <div className="files flex mt-4 p-5 justify-between">
+                                <div className="flex flex-col space-y-32 items-center w-full">
+                                    
+                                    <StyledTextField
+                                        className="project-label"
+                                        required
+                                        label="Project Name"
+                                        helperText={projectHelper}
+                                        variant="filled"
+                                        value={projectName}
+                                        onChange={(event) => {
+                                            setProjectName(event.target.value)
+                                            setProjectHelper('')
+                                        }}
+                                        sx={{
+                                            '.css-4ttn6k-MuiFormHelperText-root': {
+                                                color: 'red'
+                                            }
+                                        }}
+                                    />
+                                </div>
+
+                            </div>
+                            <div className="files flex mt-10 p-5 justify-between">
+                                <div className="flex flex-col space-y-32 items-center w-full">
+                                    
+                                    <StyledTextField
+                                        className="project-label"
+                                        required
+                                        label="Repository URL"
+                                        helperText={URLHelper}
+                                        variant="filled"
+                                        value={repositoryURL}
+                                        onChange={(event) => {
+                                            setRepositoryURL(event.target.value)
+                                            setURLHelper('')
+                                        }}
+                                        sx={{
+                                            '.css-4ttn6k-MuiFormHelperText-root': {
+                                                color: 'red'
+                                            }
+                                        }}
+                                    />
+                                </div>
+
+                            </div>
+                            <div className="files flex mt-10 p-5 justify-between">
+                                <div className="flex flex-col space-y-32 items-center w-full">
+                                    
+                                    <StyledTextField
+                                        className="project-label"
+                                        required
+                                        label="Branch Name"
+                                        helperText={branchHelper}
+                                        variant="filled"
+                                        value={branchName}
+                                        onChange={(event) => {
+                                            setBranchName(event.target.value)
+                                            setBranchHelper('')
+                                        }}
+                                        sx={{
+                                            '.css-4ttn6k-MuiFormHelperText-root': {
+                                                color: 'red'
+                                            }
+                                        }}
+                                    />
+                                </div>
+
+                            </div>
+
+                            <Button className="continue mt-8 p-2 mb-5" onClick={handleGitRequired}>
+                                <p className="continueText">Continue</p>
+                            </Button>
+                            
+      </CustomTabPanel>
+                            
                         </FileDropBox>
                     </div>
 
