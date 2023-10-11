@@ -23,14 +23,17 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { deleteJwtToken } from '../../login';
 import { useNavigate } from 'react-router-dom';
-import {colorScheme} from './colors'
+import { colorScheme } from './colors'
 import UploadIcon from '@mui/icons-material/Upload';
 import SourceIcon from '@mui/icons-material/Source';
 import FolderStructure from './repositoryStructureView';
 import CodeIcon from '@mui/icons-material/Code';
-import  useAppStore  from './states';
+import useAppStore from './states';
 import { ArrowDropDown, ImportContacts } from '@mui/icons-material';
-
+import { useLocation } from 'react-router-dom';
+import GitHubLogo from '../github.svg';
+import { getGitHubUrl } from '../../utils/getGithubUrl';
+import { Link as MuiLink } from '@mui/material';
 
 const drawerWidth = 240;
 
@@ -103,34 +106,34 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
 export default function SideNav(props) {
   const theme = useTheme();
   const updateFileContent = useAppStore((state) => state.updateFileContent);
-  const updateFileName = useAppStore((state)=> state.updateFileName)
+  const updateFileName = useAppStore((state) => state.updateFileName)
 
   // const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const updateOpen = useAppStore((state) => state.updateOpen);
-  const open = (props.opened)? true :  useAppStore((state) => state.dopen);
+  const open = (props.opened) ? true : useAppStore((state) => state.dopen);
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
-  
+
   const navigate = useNavigate()
-  const handleLogout = () =>{
+  const handleLogout = () => {
     deleteJwtToken();
     navigate('/login')
   }
   const handleClose = () => {
     setAnchorEl(null);
   };
-  const handleUploadRouting = (urls) =>{
+  const handleUploadRouting = (urls) => {
     updateFileContent(null)
     updateFileName(null)
     navigate('/upload')
   }
-  const handleDashBoardRouting = (urls) =>{
+  const handleDashBoardRouting = (urls) => {
     navigate('/dashboard')
   }
-  const handleRepositoryRouting = (urls) =>{
+  const handleRepositoryRouting = (urls) => {
     navigate('/repositories')
   }
   const handleDrawerOpen = () => {
@@ -141,61 +144,91 @@ export default function SideNav(props) {
     setOpen(false);
   };
 
+  const location = useLocation();
+  let from = (location.state?.from?.pathname || '/');
+
+  const handleGitHubLogin = () => {
+    window.location.href = getGitHubUrl(from);
+  }
+
   return (
-    <Box sx={{  backgroundColor:colorScheme.menu_primary ,  }}>
+    <Box sx={{ backgroundColor: colorScheme.menu_primary, }}>
       <CssBaseline />
       <AppBar position="fixed" open={open}>
-        <Toolbar sx={{width:'100%' , backgroundColor : colorScheme.primary}}>
-          <Typography variant="h5" component="div" sx={{ 
+        <Toolbar sx={{ width: '100%', backgroundColor: colorScheme.primary }}>
+          <Typography variant="h5" component="div" sx={{
             flexGrow: 1,
-             }}>
-              CodeBridge
+          }}>
+            CodeBridge
           </Typography>
-           
-            <div>
-              <IconButton
+
+          <div>
+            <IconButton
               className='iconButton'
-                size="large"
-                aria-label="account of current user"
-                aria-controls="menu-appbar"
-                aria-haspopup="true"
-                onClick={handleMenu}
-                color="inherit"
-              >
-                <AccountCircle />
-              </IconButton>
-              <Menu
-                id="menu-appbar"
-                anchorEl={anchorEl}
-                anchorOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
+              size="large"
+              aria-label="account of current user"
+              aria-controls="menu-appbar"
+              aria-haspopup="true"
+              onClick={handleMenu}
+              color="inherit"
+            >
+              <AccountCircle />
+            </IconButton>
+            <Menu
+              id="menu-appbar"
+              anchorEl={anchorEl}
+              anchorOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              open={Boolean(anchorEl)}
+              onClose={handleClose}
+            >
+              <MenuItem onClick={handleClose}> <MuiLink
+                onClick={handleGitHubLogin}
+                sx={{
+                  // backgroundColor: '#f5f6f7',
+                  borderRadius: 1,
+                  // py: '0.6rem',
+                  // mt: '1.5rem',
+                  // columnGap: '1rem',
+                  textDecoration: 'none',
+                  color: '#393e45',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  '&:hover': {
+                    // backgroundColor: '#fff',
+                    // boxShadow: '0 1px 13px 0 rgb(0 0 0 / 15%)',
+                  },
                 }}
-                keepMounted
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-                open={Boolean(anchorEl)}
-                onClose={handleClose}
+                display='flex'
+                justifyContent='center'
+                alignItems='center'
               >
-                <MenuItem onClick={handleClose}>Profile</MenuItem>
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
-              </Menu>
-            </div>
-          
+                <img src={GitHubLogo} alt="GitHub Logo" style={{ height: '2rem', paddingRight:'0.2rem' }} />
+                Link to GitHub
+              </MuiLink></MenuItem>
+              <MenuItem style={{ alignItems : 'center', justifyContent: 'center'}}  onClick={handleLogout} >Logout</MenuItem>
+            </Menu>
+          </div>
+
         </Toolbar>
       </AppBar>
-      <Drawer variant="permanent" open={(props.opened)?true:open}
-      onMouseEnter={()=>{updateOpen(true), console.log('hi')}}
-      onMouseLeave={()=>(props.opened)?updateOpen(true):updateOpen(false)}
-      PaperProps={{
-        sx: {
-          backgroundColor:'#535F7E',
-          width: 240,
-          zIndex:1000,
-        }
-      }}>
+      <Drawer variant="permanent" open={(props.opened) ? true : open}
+        onMouseEnter={() => { updateOpen(true), console.log('hi') }}
+        onMouseLeave={() => (props.opened) ? updateOpen(true) : updateOpen(false)}
+        PaperProps={{
+          sx: {
+            backgroundColor: '#535F7E',
+            width: 240,
+            zIndex: 1000,
+          }
+        }}>
         <DrawerHeader>
           <IconButton>
             {theme.direction === "rtl" ? (
@@ -204,131 +237,131 @@ export default function SideNav(props) {
               <ChevronLeftIcon />
             )}
           </IconButton>
-            </DrawerHeader>
-        <List sx={{backgroundColor : colorScheme.menu_secondary , height:'100vh' }}>
-            <ListItem key={'Upload'} disablePadding  sx={{ display: 'block' }}>
-              <ListItemButton
-                sx={{
-                  minHeight: 48,
-                  justifyContent: open ? 'initial' : 'center',
-                  px: 2.5,
-                  color:'#FFFFFF'
-                }}
-                onClick={handleUploadRouting}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: open ? 3 : 'auto',
-                    justifyContent: 'center',
-                    color:'#FFFFFF'
-                  }}
-                >
-                  <UploadIcon /> 
-                </ListItemIcon>
-                <ListItemText primary={'Upload'} sx={{ opacity: open ? 1 : 0 ,color:'#FFFFFF'}} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem key={'Your Repositories'} disablePadding sx={{ display: 'block' }} >
+        </DrawerHeader>
+        <List sx={{ backgroundColor: colorScheme.menu_secondary, height: '100vh' }}>
+          <ListItem key={'Upload'} disablePadding sx={{ display: 'block' }}>
             <ListItemButton
               sx={{
                 minHeight: 48,
                 justifyContent: open ? 'initial' : 'center',
                 px: 2.5,
-                color:'#FFFFFF'
+                color: '#FFFFFF'
               }}
-              onClick={handleRepositoryRouting}
-    
+              onClick={handleUploadRouting}
             >
               <ListItemIcon
                 sx={{
                   minWidth: 0,
                   mr: open ? 3 : 'auto',
                   justifyContent: 'center',
-                  color:'#FFFFFF'
+                  color: '#FFFFFF'
                 }}
               >
-                <SourceIcon/> 
+                <UploadIcon />
               </ListItemIcon>
-              <ListItemText primary={'Your Repositories'} sx={{ opacity: open ? 1 : 0 ,color:'#FFFFFF'}} />
+              <ListItemText primary={'Upload'} sx={{ opacity: open ? 1 : 0, color: '#FFFFFF' }} />
             </ListItemButton>
           </ListItem>
-          <ListItem key={'Dashboard'}  disablePadding sx={{ display: 'block' }}>
-          <ListItemButton
-            sx={{
-              minHeight: 48,
-              justifyContent: open ? 'initial' : 'center',
-              px: 2.5,
-              color:'#FFFFFF'
-            }}
-            onClick={handleDashBoardRouting}
-          >
-            <ListItemIcon
+          <ListItem key={'Your Repositories'} disablePadding sx={{ display: 'block' }} >
+            <ListItemButton
               sx={{
-                minWidth: 0,
-                mr: open ? 3 : 'auto',
-                justifyContent: 'center',
-                color:'#FFFFFF'
-              }}
-            >
-               <CodeIcon/>
-            </ListItemIcon>
-            <ListItemText primary={'Code Converter'} sx={{ opacity: open ? 1 : 0 ,color:'#FFFFFF'}} />
-          </ListItemButton>
-        </ListItem>
-        </List>
-        {props.folderId?
-          <FolderStructure folderId={props.folderId} onNotLoggedIn={props.onNotLoggedIn}/>:
-          (props.page==='dashboard')?
-          <div>
-             <div className=' p-2 w-full' style={{border:'1px solid #FFF' , borderWidth:'1px 0 1px 0',position:'absolute'}}>
-        <Typography sx={{color:'#FFF' }}>
-          Source
-        </Typography>
-        {/* <ArrowDropDown sx={{color:'#FFF'}}/> */}
-      </div>
-          <div className="overflow-y-scroll overflow-x-scroll bg-menu_primary h-full" style={{backgroundColor : colorScheme.menu_secondary}}>
-            
-      <List className="flex flex-col justify-start" component="nav" aria-labelledby="folder-list">
-      <ListItem key={'Upload'} disablePadding  sx={{ display: 'block' }}>
-
-          <ListItemButton sx={{
                 minHeight: 48,
-                marginTop:'34px',
                 justifyContent: open ? 'initial' : 'center',
                 px: 2.5,
-                color:'#FFFFFF'
+                color: '#FFFFFF'
               }}
-            onClick={handleRepositoryRouting}>
+              onClick={handleRepositoryRouting}
 
-
-
-            <div style={{marginBottom:'22rem',marginLeft:'2rem'}}>
-                <ListItemIcon sx={{
-                    minWidth: 0,
-                    mr: open ? 1 : 'auto',
-                    justifyContent: 'centre',
-                    color:'#FFFFFF'
-                  }}>
-              <ImportContacts/>
-              <div style={{marginLeft:'1rem',marginBottom:'1rem'}}>
-                  <ListItemText primary={'Open New'} />
-              </div>
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: open ? 3 : 'auto',
+                  justifyContent: 'center',
+                  color: '#FFFFFF'
+                }}
+              >
+                <SourceIcon />
               </ListItemIcon>
-
-            
-            
-
-            </div>
-          </ListItemButton>
+              <ListItemText primary={'Your Repositories'} sx={{ opacity: open ? 1 : 0, color: '#FFFFFF' }} />
+            </ListItemButton>
           </ListItem>
-      </List>
-    </div>
-          </div>
-         
-          
-          :
-          <></>
+          <ListItem key={'Dashboard'} disablePadding sx={{ display: 'block' }}>
+            <ListItemButton
+              sx={{
+                minHeight: 48,
+                justifyContent: open ? 'initial' : 'center',
+                px: 2.5,
+                color: '#FFFFFF'
+              }}
+              onClick={handleDashBoardRouting}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: open ? 3 : 'auto',
+                  justifyContent: 'center',
+                  color: '#FFFFFF'
+                }}
+              >
+                <CodeIcon />
+              </ListItemIcon>
+              <ListItemText primary={'Code Converter'} sx={{ opacity: open ? 1 : 0, color: '#FFFFFF' }} />
+            </ListItemButton>
+          </ListItem>
+        </List>
+        {props.folderId ?
+          <FolderStructure folderId={props.folderId} onNotLoggedIn={props.onNotLoggedIn} /> :
+          (props.page === 'dashboard') ?
+            <div>
+              <div className=' p-2 w-full' style={{ border: '1px solid #FFF', borderWidth: '1px 0 1px 0', position: 'absolute' }}>
+                <Typography sx={{ color: '#FFF' }}>
+                  Source
+                </Typography>
+                {/* <ArrowDropDown sx={{color:'#FFF'}}/> */}
+              </div>
+              <div className="overflow-y-scroll overflow-x-scroll bg-menu_primary h-full" style={{ backgroundColor: colorScheme.menu_secondary }}>
+
+                <List className="flex flex-col justify-start" component="nav" aria-labelledby="folder-list">
+                  <ListItem key={'Upload'} disablePadding sx={{ display: 'block' }}>
+
+                    <ListItemButton sx={{
+                      minHeight: 48,
+                      marginTop: '34px',
+                      justifyContent: open ? 'initial' : 'center',
+                      px: 2.5,
+                      color: '#FFFFFF'
+                    }}
+                      onClick={handleRepositoryRouting}>
+
+
+
+                      <div style={{ marginBottom: '22rem', marginLeft: '2rem' }}>
+                        <ListItemIcon sx={{
+                          minWidth: 0,
+                          mr: open ? 1 : 'auto',
+                          justifyContent: 'centre',
+                          color: '#FFFFFF'
+                        }}>
+                          <ImportContacts />
+                          <div style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
+                            <ListItemText primary={'Open New'} />
+                          </div>
+                        </ListItemIcon>
+
+
+
+
+                      </div>
+                    </ListItemButton>
+                  </ListItem>
+                </List>
+              </div>
+            </div>
+
+
+            :
+            <></>
         }
       </Drawer>
       {/* <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
