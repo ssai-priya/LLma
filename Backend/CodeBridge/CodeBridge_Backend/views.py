@@ -508,10 +508,11 @@ class CodeGenAPIViewNew(APIView):
             'code': generated_code,
             'logic': logic_id,
             'user': self.request.user,
-            'file': file_id
+            'file': file_id,
+            'language_converted' : destination
         }
         
-        existing_code = JavaCode.objects.filter(file=file, logic=logic, user=self.request.user).first()
+        existing_code = JavaCode.objects.filter(file=file, logic=logic, user=self.request.user, language_converted = destination).first()
         
         if existing_code:
             serializer = JavaCodeSerializer(existing_code, data=code_data)
@@ -539,17 +540,19 @@ class CodeGenAPIViewNew(APIView):
             logic = self.get_object(file_id, logic_id)
         except FileUpload.DoesNotExist:
             return Response({'error': 'Logic not generated'}, status=404)
+        
+        source = request.data.get('source')
+        destination = request.data.get('destination')
 
         file = self.get_object(file_id)
-        code_exists = JavaCode.objects.filter(file=file, logic=logic, user=request.user).exists()# github rep collab check instead of user
+        code_exists = JavaCode.objects.filter(file=file, logic=logic, user=request.user,language_converted = destination).exists()# github rep collab check instead of user
 
         if code_exists:
-            code = JavaCode.objects.filter(file=file, logic=logic, user=request.user).first()
+            code = JavaCode.objects.filter(file=file, logic=logic, user=request.user, language_converted = destination).first()
             serializer = JavaCodeSerializer(code)
             return Response(serializer.data, status=200)
 
-        source = request.data.get('source')
-        destination = request.data.get('destination')
+       
         new_code_data = self.generate_code(file_id, logic_id, source, destination)
 
         if new_code_data:
