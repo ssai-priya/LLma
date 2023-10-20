@@ -282,4 +282,38 @@ sas_example1='''
         and the numeric values (counts) are represented as the heights of the bars on the y-axis. This visual representation allows business users to
         quickly and intuitively compare and analyze the distribution of counts across different categories, aiding in data-driven decision-making.
         In summary, the code's business logic involves transforming data with word-based categories and their corresponding numeric values into a visual
-        format (bar chart) to facilitate the easy interpretation and analysis of the data's distribution by business stakeholders.'''  
+        format (bar chart) to facilitate the easy interpretation and analysis of the data's distribution by business stakeholders.'''
+        
+dspf_exampler1='''
+       User= 
+        A                                      A          DSPSIZ(24 80 *DS3)
+        A          R MAINRCD
+        A                                  2  2'Enter Your Name:'
+        A            NAME      30A  B  2 20
+        A                                  4  2'Welcome,'
+        A                                  4 13 NAME
+        A                                      A          CF03(03 'Exit')
+       Business_Logic=
+       The provided DSPF (Display File) code defines a display interface for capturing a user's name and displaying a welcome message. 
+       It initializes the display, defines a record format for data organization, prompts the user to enter their name, provides an 
+       input field for name input, displays a welcome message that includes the user's name, and allows the user to exit the program
+       by pressing PF03. This code's core business logic involves user interaction and data presentation, with the "NAME" variable 
+       storing the user's input. The code uses DSPF-specific functions and parameters for display file configuration and interaction.
+'''  
+
+dspf_examplea1='''
+       User= 
+        A                                      A          DSPSIZ(24 80 *DS3)
+        A          R MAINRCD
+        A                                  2  2'Enter Your Name:'
+        A            NAME      30A  B  2 20
+        A                                  4  2'Welcome,'
+        A                                  4 13 NAME
+        A                                      A          CF03(03 'Exit')
+       Business_Logic=
+       The provided DSPF (Display File) code defines a display interface for capturing a user's name and displaying a welcome message. 
+       It initializes the display, defines a record format for data organization, prompts the user to enter their name, provides an 
+       input field for name input, displays a welcome message that includes the user's name, and allows the user to exit the program
+       by pressing PF03. This code's core business logic involves user interaction and data presentation, with the "NAME" variable 
+       storing the user's input. The code uses DSPF-specific functions and parameters for display file configuration and interaction.
+''' 

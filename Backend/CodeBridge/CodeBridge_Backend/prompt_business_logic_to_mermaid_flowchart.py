@@ -374,3 +374,73 @@ sas_example3='''
         rd --> dt
         dt --> cbc
         cbc --> vd'''
+
+dspf_exampler3='''
+     User=
+       The provided DSPF (Display File) code defines a display interface for capturing a user's name and displaying a welcome message. 
+       It initializes the display, defines a record format for data organization, prompts the user to enter their name, provides an 
+       input field for name input, displays a welcome message that includes the user's name, and allows the user to exit the program
+       by pressing PF03. This code's core business logic involves user interaction and data presentation, with the "NAME" variable 
+       storing the user's input. The code uses DSPF-specific functions and parameters for display file configuration and interaction.
+     Mermaid_Flowchart_Code=
+        graph TD
+        subgraph Initialization
+            A[Initialize Display]
+            B[Define Record Format]
+            C[Display User Prompt]
+        end
+        subgraph UserInteraction
+            D[User Inputs Name]
+            E[Display Welcome Message]
+        end
+        F[Exit on PF03]
+        A --> B
+        B --> C
+        C --> D
+        D --> E
+        E --> F
+        F -->|Yes| A
+        F -->|No| G[End]
+        style A fill:#ff9900,stroke:#e68a00
+        style B fill:#ff9900,stroke:#e68a00
+        style C fill:#ff9900,stroke:#e68a00
+        style D fill:#00cc00,stroke:#009900
+        style E fill:#00cc00,stroke:#009900
+        style F fill:#ff0000,stroke:#cc0000
+        style G fill:#cccccc,stroke:#999999
+'''  
+
+dspf_examplea3='''
+     User=
+       The provided DSPF (Display File) code defines a display interface for capturing a user's name and displaying a welcome message. 
+       It initializes the display, defines a record format for data organization, prompts the user to enter their name, provides an 
+       input field for name input, displays a welcome message that includes the user's name, and allows the user to exit the program
+       by pressing PF03. This code's core business logic involves user interaction and data presentation, with the "NAME" variable 
+       storing the user's input. The code uses DSPF-specific functions and parameters for display file configuration and interaction.
+     Mermaid_Flowchart_Code=
+        graph TD
+        subgraph Initialization
+            A[Initialize Display]
+            B[Define Record Format]
+            C[Display User Prompt]
+        end
+        subgraph UserInteraction
+            D[User Inputs Name]
+            E[Display Welcome Message]
+        end
+        F[Exit on PF03]
+        A --> B
+        B --> C
+        C --> D
+        D --> E
+        E --> F
+        F -->|Yes| A
+        F -->|No| G[End]
+        style A fill:#ff9900,stroke:#e68a00
+        style B fill:#ff9900,stroke:#e68a00
+        style C fill:#ff9900,stroke:#e68a00
+        style D fill:#00cc00,stroke:#009900
+        style E fill:#00cc00,stroke:#009900
+        style F fill:#ff0000,stroke:#cc0000
+        style G fill:#cccccc,stroke:#999999
+'''
