@@ -44,7 +44,7 @@ export default function Dashboard(props) {
           <Box component="main" sx={{ flexGrow: 1}}>
           <div className='flex' style={{ backgroundColor: '#FFF', height: '100vh', paddingTop: '64px' }}>
 
-            <InteractiveArea/>
+            <InteractiveArea folderId={project}/>
         </div>
         </Box>
         </Box>

@@ -225,7 +225,7 @@ export default function SideNav(props) {
         PaperProps={{
           sx: {
             backgroundColor: '#535F7E',
-            width: 240,
+            width: '240',
             zIndex: 1000,
           }
         }}>
