@@ -40,6 +40,7 @@ urlpatterns = [
     path('push-to-git/',views.PushCodeToGitHub.as_view(),name='push_to_git'),
     path('create-branch/',views.CreateGitHubBranch.as_view(),name='create_branch'),
     path('git-pull/',views.PullCodeFromGitHub.as_view(),name='git_pull'),
-
-
+    path('api/business_logic/<str:folder_path>/', views.HigherLevelBusinessLogic.as_view(), name='business-logic'),
+    path('api/mermaid-diagram/<str:folder_path>/', views.HigherLevelMermaidDiagram.as_view(), name='mermaid_diagram'),
+    path('api/mermaid_flowchart/<str:folder_path>/', views.HigherLevelMermaidFlowchart.as_view(), name='mermaid_flowchart'),
 ]

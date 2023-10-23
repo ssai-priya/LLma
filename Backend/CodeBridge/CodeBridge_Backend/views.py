@@ -6,7 +6,7 @@ from .service import business_logic
 from django.http import HttpResponseBadRequest
 from django.http import HttpResponse
 from .service import generateJava,generateFlowChart,generateClassDiagram,javaCompiler,detectLanguage
-from .new_prompts import business_logic_to_mermaid_diagram,business_logic_to_code,business_logic_to_mermaid_flowchart,code_to_business_logic
+from .new_prompts import business_logic_to_mermaid_diagram,business_logic_to_code,business_logic_to_mermaid_flowchart,code_to_business_logic, file_business_logic,file_mermaid_diagram,file_mermaid_flowchart,combine_business_logic,combine_mermaid_diagram,combine_mermaid_flowchart
 import os
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -21,7 +21,16 @@ import requests
 from django.shortcuts import redirect
 from rest_framework.decorators import permission_classes,authentication_classes
 from .newrepo import create_repository,get_git_repo_owner,create_github_branch,push_to_github
-
+import os
+from pydantic import BaseModel
+from langchain import LLMChain, PromptTemplate
+from langchain.chat_models import ChatAnthropic
+from langchain.output_parsers import StructuredOutputParser,ResponseSchema
+from .prompt_code_to_business_logic import java_example1,python_example1,sql_example1,mongodb_example1,react_example1,angular_example1,rpg_example1,sas_example1, dspf_exampler1,dspf_examplea1
+from .prompt_business_logic_to_mermaid_diagram import java_example2,python_example2,sql_example2,mongodb_example2,react_example2,angular_example2,rpg_example2,sas_example2, dspf_exampler2,dspf_examplea2
+from .prompt_business_logic_to_mermaid_flowchart import java_example3,python_example3,sql_example3,mongodb_example3,react_example3,angular_example3,rpg_example3,sas_example3, dspf_exampler3,dspf_examplea3
+from .prompt_business_logic_to_code import java_example4,python_example4,sql_example4,mongodb_example4,react_example4,angular_example4,rpg_example4,sas_example4, dspf_exampler4,dspf_examplea4
+import keys
 
 
 
@@ -1218,3 +1227,318 @@ class CreatePullRequest(APIView):
         else:
             print(f"Failed to create pull request: {response.text}")
             return None
+        
+from rest_framework.views import APIView
+from rest_framework.response import Response
+       
+class HigherLevelBusinessLogic(APIView):
+    def post(self, request):
+        folder_path = request.data.get('folder_path', '')
+
+        if folder_path:
+            business_logic = self.process_folder_business_logic(folder_path)
+            return Response({'business_logic': business_logic})
+        else:
+            return Response({'error': 'Invalid or missing folder_path'}, status=400)
+
+    def process_folder_business_logic(self, folder_path):
+        business_logic = ""
+        folder_name = os.path.basename(folder_path)
+        folder_structure = os.listdir(folder_path)
+        src_path = os.path.join(folder_path, "src")
+
+        if os.path.exists(src_path) and os.path.isdir(src_path):
+            for item in os.listdir(src_path):
+                if item in (".DS_Store", ".gitignore", "_pycache_", "README.md", "pom.xml", ".idea", ".mvn", "mvnw.cmd", "HELP.md", "target", "data", "Data"):
+                    continue
+                item_path = os.path.join(src_path, item)
+                if os.path.isdir(item_path):
+                    Business_logic = self.process_folder_business_logic(item_path)
+                else:
+                    Business_logic = self.file_business_logic(item_path)
+
+                business_logic = self.combine_business_logic(folder_name, folder_structure, business_logic, item, Business_logic)
+        else:
+            for item in os.listdir(folder_path):
+                if item in (".DS_Store", ".gitignore", "_pycache_", "README.md", "pom.xml", ".idea", ".mvn", ".mvnw.cmd", "HELP.md", "target", "data", "Data"):
+                    continue
+                item_path = os.path.join(folder_path, item)
+                if os.path.isdir(item_path):
+                    Business_logic = self.process_folder_business_logic(item_path)
+                else:
+                    Business_logic = self.file_business_logic(item_path)
+
+                business_logic = self.combine_business_logic(folder_name, folder_structure, business_logic, item, Business_logic)
+                
+        return business_logic
+    
+    def file_business_logic(file_path):
+        with open(file_path, 'rb') as file:
+            code = file.read() 
+        
+        source=""
+        logic= code_to_business_logic(code,source)
+        return logic
+
+    def combine_business_logic(folder_name,
+                            folder_structure,
+                            previous_business_logic,
+                            current_directory_name,
+                            current_directory_business_logic):
+        
+        
+        template='''
+        I'd like to generate comprehensive business logic documentation for a specific directory named '{folder_name}' with the following 
+        folder structure: '{folder_structure}'. 
+
+        To accomplish this, I will aggregate business logic from each directory within this folder one by one. Specifically, I will merge the business 
+        logic from selected directories within the folder structure with the business logic from the current directory named '{current_directory_name}' 
+        within the same folder structure. This process will result in a combined business logic document, which includes the accumulated logic up to the
+        specified directory and the business logic of the current directory. The goal is to create an all-encompassing report that includes any imported
+        statements from other files and all significant statements originating from these files. Additionally, this report will list the names of all
+        files and folders involved and the business logic report for the specified directory and its subdirectories will also include specific variable
+        values relevant to the overall business logic. It will indicate functions imported from other files and specify their sources, maintain consistency
+        in variable and function names, and provide function parameter types for each function.
+
+        In cases where the previous file's business logic is empty, it signifies that the current file is the first file, and there is no previous file's
+        business logic.
+        
+        Now give me only Combined Business Logic of  Previous and Current Directory Logic given below: 
+        
+        Previous Business Logic: {previous_business_logic}
+        Current Directory Business Logic: {current_directory_business_logic}
+        
+        '''
+
+        llm_chain = LLMChain(
+            llm=ChatAnthropic(
+                temperature=0.8,
+                model="claude-2.0",
+                max_tokens_to_sample=100000
+            ),
+            prompt=PromptTemplate(
+                input_variables=[
+                    "folder_name",
+                    "folder_structure",
+                    "previous_business_logic",
+                    "current_directory_name",
+                    "current_directory_business_logic"
+                ],
+                template=template
+            ),
+            verbose=True,
+        )
+
+        logic= llm_chain.predict(folder_name=folder_name,
+                                folder_structure=folder_structure,
+                                previous_business_logic=previous_business_logic,
+                                current_directory_name=current_directory_name,
+                                current_directory_business_logic=current_directory_business_logic)
+        return f"{logic}"
+
+class HigherLevelMermaidDiagram(APIView):
+    def post(self, request):
+        folder_path = request.data.get('folder_path', '')
+
+        if folder_path:
+            mermaid_diagram = self.process_folder_mermaid_diagram(folder_path)
+            return Response({'mermaid_diagram': mermaid_diagram})
+        else:
+            return Response({'error': 'Invalid or missing folder_path'}, status=400)
+    
+    def process_folder_mermaid_diagram(self, folder_path):
+        mermaid_diagram=""
+        folder_name=os.path.basename(folder_path)
+        folder_structure=os.listdir(folder_path)
+        src_path = os.path.join(folder_path, "src")
+
+        if os.path.exists(src_path) and os.path.isdir(src_path):
+            for item in os.listdir(src_path): 
+                if item in (".DS_Store", ".gitignore","_pycache_","README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
+                    continue
+                item_path = os.path.join(src_path, item) 
+                
+                if os.path.isdir(item_path):  
+                    Mermaid_Diagram = self.process_folder_mermaid_diagram(item_path) 
+                else:
+                    Mermaid_Diagram = self.file_mermaid_diagram(item_path)
+                    
+                mermaid_diagram= self.combine_mermaid_diagram(folder_name,folder_structure,mermaid_diagram,
+                                                        item,Mermaid_Diagram)
+        else:    
+            for item in os.listdir(folder_path):   
+                if item in (".DS_Store", ".gitignore","_pycache_","README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
+                    continue
+                item_path = os.path.join(folder_path, item) 
+                
+                if os.path.isdir(item_path):  
+                    Mermaid_Diagram = self.process_folder_mermaid_diagram(item_path) 
+                else:
+                    Mermaid_Diagram = self.file_mermaid_diagram(item_path)
+                    
+                mermaid_diagram= self.combine_mermaid_diagram(folder_name,folder_structure,mermaid_diagram,
+                                                        item,Mermaid_Diagram)
+        
+        return mermaid_diagram
+    
+    def file_mermaid_diagram(file_path):
+        with open(file_path, 'rb') as file:
+            code = file.read() 
+            
+        source=""
+        destination=""    
+        logic=code_to_business_logic(code,source)
+        mermaid_diagram = business_logic_to_mermaid_diagram(logic,source,destination)
+        return mermaid_diagram
+
+    def combine_mermaid_diagram(folder_name,
+                            folder_structure,
+                            previous_mermaid_diagram,
+                            current_directory_name,
+                            current_directory_mermaid_diagram):
+        
+        
+        classDiagram_schema = ResponseSchema(name='mermaid_class_diagram_code',description='This is the mermaid class diagram code which can be rendered by mermaidjs 8.11.0. , converted to a correct json string with new line replaced with \\n.')
+        classDiagram_description_schema = ResponseSchema(name='mermaid_class_diagram_code_description',description='This is the description of the class diagram code generated')
+
+        response_schema = (classDiagram_schema,classDiagram_description_schema)
+        parser = StructuredOutputParser.from_response_schemas(response_schema)
+        format_instructions = parser.get_format_instructions()
+        
+        template='''
+        I want to generate the complete Mermaid Diagram for the folder named '{folder_name}'. The folder structure of this folder is '{folder_structure}'.
+        To achieve this, I will consolidate the Mermaid Diagram from each directory within it one by one. Specifically, I will merge the Mermaid Diagram
+        from some directories within the folder structure with the current directory's Mermaid Diagram named 
+        '{current_directory_name}'. This process will result in the combined Mermaid Diagram up to the specified directory and the Mermaid Diagram of 
+        the current directory.Remember, in the future, anyone can convert this Mermaid Class diagram code to another language code easily, so provide the 
+        answer in the context of that. Also, give code in the correct syntax so that it can be rendered by MermaidJS 8.11.0. 
+        
+        Now give me combined Mermaid Diagram of Previous Mermaid Diagram and Curreny Directory Mermaid Diagram given below.
+        
+        Previous Mermaid Diagram:
+        
+        {previous_mermaid_diagram}
+        
+        Current Directory Mermaid Diagram: 
+        
+        {current_directory_mermaid_diagram}
+        
+        {format_instructions}
+
+        '''
+
+        llm_chain = LLMChain(
+            llm = ChatAnthropic(temperature= 0.8,model = "claude-2.0",max_tokens_to_sample=100000),
+            prompt=PromptTemplate(input_variables=["folder_name","folder_structure","previous_mermaid_diagram",
+                                                "current_directory_name","current_directory_mermaid_diagram"],partial_variables={"format_instructions":format_instructions}, template=template),
+            verbose=True,
+        )
+        logic= llm_chain.predict(folder_name=folder_name,
+                                folder_structure=folder_structure,
+                                previous_mermaid_diagram=previous_mermaid_diagram,
+                                current_directory_name=current_directory_name,
+                                current_directory_mermaid_diagram=current_directory_mermaid_diagram)
+        return f"{logic}"
+
+class HigherLevelMermaidFlowchart(APIView):
+    def post(self, request):
+        folder_path = request.data.get('folder_path', '')
+
+        if folder_path:
+            mermaid_flowchart = self.process_folder_mermaid_flowchart(folder_path)
+            return Response({'mermaid_flowchart': mermaid_flowchart})
+        else:
+            return Response({'error': 'Invalid or missing folder_path'}, status=400)
+        
+    def file_mermaid_flowchart(file_path):
+        with open(file_path, 'rb') as file:
+            code = file.read() 
+        
+        source=""
+        destination=""
+        logic=code_to_business_logic(code,source)
+        mermaid_flowchart = business_logic_to_mermaid_flowchart(logic,source,destination)
+        return mermaid_flowchart
+        
+    def combine_mermaid_flowchart(folder_name,
+                            folder_structure,
+                            previous_mermaid_flowchart,
+                            current_directory_name,
+                            current_directory_mermaid_flowchart):
+        
+        
+        flowchart_schema = ResponseSchema(name='mermaid_flowchart_code',description='This is the mermaid flowchart code with properly linked nodes which can be rendered by mermaidjs 8.11.0. ,converted to a correct json string with new line replaced with \\n. Also all the nodes should contain strings so that any special characters do not cause problems')
+        flowchart_description_schema = ResponseSchema(name='flowchart_code_description',description='This is the description of the flowchart code generated')
+
+        response_schema = (flowchart_schema,flowchart_description_schema)
+        parser = StructuredOutputParser.from_response_schemas(response_schema)
+        format_instructions = parser.get_format_instructions()
+
+        
+        template='''
+        I want to generate the complete Mermaid Diagram for the folder named '{folder_name}'. The folder structure of this folder is '{folder_structure}'.
+        To achieve this, I will consolidate the Mermaid Diagram from each directory within it one by one. Specifically, I will merge the Mermaid Diagram
+        from directories some within the folder structure with the current directory's Mermaid Diagram named 
+        '{current_directory_name}'. This process will result in the combined Mermaid Diagram up to the specified directory and the Mermaid Diagram of 
+        the current directory.and the remember in future anyone can convert this mermaid diagram code to business logic easily.Also give code in correct
+        syntax so that it can be rendered by mermaidjs 8.11.0 . Make sure the blocks are properly linked .Mermaid flow chart diagram that visually
+        represents this logic.Now give me combined Mermaid Flowchart Code using Previous Memaid Flowchart and Current Directory Mermaid Flowchart given below:
+
+        Previous Mermaid Flowchart:
+        
+        {previous_mermaid_flowchart}
+        
+        Current Directory Mermaid Flowchart: 
+        
+        {current_directory_mermaid_flowchart}
+
+        {format_instructions}
+        '''
+
+        llm_chain = LLMChain(
+            llm = ChatAnthropic(temperature= 0.8,model = "claude-2.0",max_tokens_to_sample=100000),
+            prompt=PromptTemplate(input_variables=["folder_name","folder_structure","previous_mermaid_flowchart",
+                                                "current_directory_name","current_directory_mermaid_flowchart"],partial_variables={"format_instructions":format_instructions}, template=template),
+            verbose=True,
+        )
+        mermaid_flowchart= llm_chain.predict(folder_name=folder_name,
+                                folder_structure=folder_structure,
+                                previous_mermaid_flowchart=previous_mermaid_flowchart,
+                                current_directory_name=current_directory_name,
+                                current_directory_mermaid_flowchart=current_directory_mermaid_flowchart)
+        return f"{mermaid_flowchart}"
+                
+    def process_folder_mermaid_flowchart(self,folder_path):
+        mermaid_flowchart=""
+        folder_name=os.path.basename(folder_path)
+        folder_structure=os.listdir(folder_path)
+        src_path = os.path.join(folder_path, "src")
+
+        if os.path.exists(src_path) and os.path.isdir(src_path):
+            for item in os.listdir(src_path): 
+                
+                if item in (".DS_Store", ".gitignore","_pycache_","README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
+                    continue
+                item_path = os.path.join(src_path, item) 
+                if os.path.isdir(item_path):  
+                    Mermaid_Flowchart = self.process_folder_mermaid_flowchart(item_path) 
+                else:
+                    Mermaid_Flowchart = self.file_mermaid_flowchart(item_path)
+                
+                mermaid_flowchart= self.combine_mermaid_flowchart(folder_name,folder_structure,mermaid_flowchart,
+                                                        item,Mermaid_Flowchart)
+        else:
+            for item in os.listdir(folder_path): 
+                
+                if item in (".DS_Store", ".gitignore","_pycache_","README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
+                    continue
+                item_path = os.path.join(folder_path, item) 
+                if os.path.isdir(item_path):  
+                    Mermaid_Flowchart = self.process_folder_mermaid_flowchart(item_path) 
+                else:
+                    Mermaid_Flowchart = self.file_mermaid_flowchart(item_path)   
+                
+                mermaid_flowchart= self.combine_mermaid_flowchart(folder_name,folder_structure,mermaid_flowchart,
+                                                        item,Mermaid_Flowchart)
+        
+        return mermaid_flowchart
