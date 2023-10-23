@@ -1,4 +1,3 @@
-
 from django.http import JsonResponse
 import keys
 import base64
@@ -126,9 +125,7 @@ class FolderUploadView(APIView):
             folder_data['subfolders'].append(subfolder_data)
 
         return folder_data
-
-         
-        
+       
     def get(self, request,folder_id=None):
         username = request.user
         user = User.objects.get(username=username)
@@ -1232,6 +1229,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
        
 class HigherLevelBusinessLogic(APIView):
+    permission_classes = [CustomIsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    
     def post(self, request):
         folder_path = request.data.get('folder_path', '')
 
