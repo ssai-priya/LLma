@@ -8,7 +8,7 @@ import Box from '@mui/material/Box';
 import useAppStore from './assets/components/states';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit } from '@fortawesome/free-solid-svg-icons';
-import { Button, Divider, Drawer, Fab, IconButton } from '@mui/material';
+import { Button, Divider, Drawer, Fab, IconButton, Input, Select,MenuItem, Modal } from '@mui/material';
 import { Split } from "@geoffcox/react-splitter";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, duotoneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -23,6 +23,10 @@ import "ace-builds/src-noconflict/mode-java";
 import "ace-builds/src-noconflict/theme-clouds_midnight";
 import "ace-builds/src-noconflict/ext-language_tools"
 import CircularProgress from '@mui/material/CircularProgress';
+import GitPushModal from './assets/components/gitpushmodal';
+import NewRepModal from './assets/components/newrepmodal';
+import NewBranchModal from './assets/components/newbranchmodal';
+import SelectFilesModal from './assets/components/selectfilesmodal';
 
 
 
@@ -57,7 +61,7 @@ const RPGLECodeBlock = ({ fileContent }) => {
 
 
   return (
-    <SyntaxHighlighter showLineNumbers language={language} style={vscDarkPlus} customStyle={{ codeStyles, height: '96.5%', borderRadius: '15px' }}>
+    <SyntaxHighlighter showLineNumbers language={language} style={vscDarkPlus} customStyle={{ codeStyles, height: '90.5%', borderRadius: '15px' }}>
       {fileContent ? fileContent : ''}
     </SyntaxHighlighter>
 
@@ -121,21 +125,88 @@ const useStyles = {
 
   },
 };
-export default function InteractiveArea() {
+export default function InteractiveArea(props) {
 
 
 
   const [logicLoader, setLogicLoader] = useState(false)
+  const [highlogicLoader, setHighLogicLoader] = useState(false)
   const [diagramLoader, setDiagramLoader] = useState(false)
   const [javaLoader, setJavaLoader] = useState(false)
   const [selectedFile, setSelectedFile] = useState('');
   const [convertingFile, setConvertingFile] = useState('');
-    
+  const [branch,setBranch] = useState('');
+  const [selectedfilelist,setSelectedfilelist] = useState([])
+  const [repinfo,setRepinfo] = useState(null)
+
+  const handleBranchChange = (event) => {
+    setBranch(event.target.value);
+  };
+  const [openModal, setOpenModal] = useState(false);
+  const [openRepModal, setOpenRepModal] = useState(false);
+  const [openBranchModal, setOpenBranchModal] = useState(false);
+  const [openSelectFilesModal, setOpenSelectFilesModal] = useState(false)
+  const getBranchList = async (id) => {
+    const jwtToken = sessionStorage.getItem("jwt");
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/get-branch/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwtToken}`,
+        },
+        body: JSON.stringify({
+            'url' : repinfo.repository_url,
+            'name': repinfo.repository_name,
+        })
+      })
+      const data = await response.json();
+      console.log(data)
+      setBranchlist(data['branches'])
+    } catch (error) {
+      console.log(error)
+    }
+}
+
+  const handleOpenModal = () => {
+    getRepositoryList()
+    setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+  };
+
+  const handleOpenRepModal = () => {
+    setOpenRepModal(true);
+  };
+
+  const handleCloseRepModal = () => {
+    getRepositoryList()
+    setOpenRepModal(false);
+
+  };
+  const handleOpenBranchModal = () => {
+    setOpenBranchModal(true);
+  };
+
+  const handleCloseBranchModal = () => {
+    getBranchList()
+    setOpenBranchModal(false);
+  };
+  const handleOpenSelectFiles = () => {
+    setOpenSelectFilesModal(true);
+  };
+
+  const handleCloseSelectFiles = () => {
+    setOpenSelectFilesModal(false);
+  };
     // Define an array of options for your select boxes
     const selectedOptions = [
       'RPG',
       'SAS',
       'Assembly',
+      'Java',
       // Add more options as needed
     ];
   
@@ -154,13 +225,19 @@ export default function InteractiveArea() {
   const isGenButtonClicked = useAppStore((state) => state.isGenButtonClicked);
   const setIsGenButtonClicked = useAppStore((state) => state.setIsGenButtonClicked)
   const [value, setValue] = useState(0);
+  const [blvalue, setBlValue] = useState(0);
+  const [mdvalue, setMdValue] = useState(0);
   const [merm, setMerm] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isHighEditing, setIsHighEditing] = useState(false);
   const [businessLogic, setBusinessLogic] = useState('');
+  const [highBusinessLogic, setHighBusinessLogic] = useState('');
   const [flowchartCode, setFlowchartCode] = useState('')
   const [classDiagramCode, setClassDiagramCode] = useState('')
   const [javaCode, setJavaCode] = useState('');
+  const [gitreplist,setGitreplist] = useState([])
+  const [branchlist,setBranchlist]=useState([])
   const [error, setError] = useState(''); // State to hold the error message
 
   useEffect(() => {
@@ -177,6 +254,9 @@ export default function InteractiveArea() {
   const handleEditClick = () => {
     setIsEditing(true);
   };
+  const handleHighEditClick = () => {
+    setIsHighEditing(true);
+  };
   function onChange(newValue) {
     setJavaCode(newValue)
     console.log("change", newValue);
@@ -184,7 +264,9 @@ export default function InteractiveArea() {
   const handleInputChange = (e) => {
     setBusinessLogic(e.target.value);
   };
-
+  const handleHighInputChange = (e) => {
+    setHighBusinessLogic(e.target.value);
+  };
   const handleSaveClick = async (id) => {
     setIsEditing(false);
     setLogicLoader(true)
@@ -205,6 +287,30 @@ export default function InteractiveArea() {
       generateMermaidDiagramsNew(dataGen.id)
       generateJavaCodeNew(dataGen.id)
       setLogicLoader(false)
+    } catch (error) {
+      console.log(error)
+    }
+  };
+  const handleHighSaveClick = async (id) => {
+    setIsHighEditing(false);
+    setHighLogicLoader(true)
+    // setDiagramLoader(true)
+    const jwtToken = sessionStorage.getItem("jwt");
+    try {
+      const genratedResponse = await fetch(`http://127.0.0.1:8000/logic/${selectedFileID}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwtToken}`,
+        },
+        body: JSON.stringify({ 'logic': businessLogic })
+      });
+      const dataGen = await genratedResponse.json();
+      setHighBusinessLogic(dataGen.logic)
+      // setSelectedLogicID(dataGen.id)
+      // generateMermaidDiagramsNew(dataGen.id)
+      // generateJavaCodeNew(dataGen.id)
+      setHighLogicLoader(false)
     } catch (error) {
       console.log(error)
     }
@@ -246,7 +352,14 @@ export default function InteractiveArea() {
     mermaid.contentLoaded()
     setMerm(!merm)
   };
-
+  const handleBLChange = (event, newValue) => {
+    setBlValue(newValue);
+  };
+  const handleMDChange = (event, newValue) => {
+    setMdValue(newValue);
+    mermaid.contentLoaded()
+    setMerm(!merm)
+  };
   const generateMermaidDiagrams = async (id) => {
     setDiagramLoader(true)
     const jwtToken = sessionStorage.getItem("jwt");
@@ -390,11 +503,28 @@ export default function InteractiveArea() {
     }
 
   };
-  let javaExample = "Here is how the RPG code could be implemented in Java:\n\n```java\nimport java.time.LocalDateTime;\nimport java.time.format.DateTimeFormatter;\n\npublic class PrintReport {\n\n  static final String TOP = \"\TOP\";\n  static final String S1 = \"\S1\"; \n  static final String S2 = \"\S2\";\n  static final String S3 = \"\S3\";\n  static final String S0 = \"\S0\";\n\n  static class Line {\n    String fcfc;\n    String leftMargin;\n    String text;\n    String num;\n    String moreLeftMargin; \n    String timestamp;\n    \n    Line() {\n      leftMargin = \"      \";\n      moreLeftMargin = \"      \";\n    }\n  }\n  \n  static Line head1 = new Line();\n  static Line head2 = new Line();\n  static Line head3 = new Line();\n\n  public static void main(String[] args) {\n    \n    head1.fcfc = TOP;\n    head1.text = \"Simple Report\";\n    \n    head2.fcfc = S2;\n    head2.num = \"Number\";\n    head2.timestamp = \"Time Stamp\";\n    \n    head3.fcfc = S0;\n    head3.num = \"------\";\n    head3.timestamp = \"----------\";\n\n    for (int i = 1; i <= 70; i++) {\n      \n      Line line = new Line();\n      line.num = String.format(\"%06d\", i);\n      \n      if (i % 60 == 1) {\n        line.fcfc = TOP;\n      } else {\n        line.fcfc = S1;  \n      }\n      \n      line.timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss\"));\n\n      System.out.println(line.fcfc + line.leftMargin + line.text + line.num + \n                         line.moreLeftMargin + line.timestamp);\n    }\n    \n    Line finalLine = new Line();\n    finalLine.fcfc = S3;\n    finalLine.text = \"End of report\";\n    System.out.println(finalLine.fcfc + finalLine.leftMargin + finalLine.text);\n\n  }\n\n}\n```\n\nThe key aspects:\n- Define constants for the FCFC codes \n- Line class to represent each report line\n- Header lines initialized with formatting and text \n- Loop through detail lines, generating line number and timestamp\n- Print header, detail and final lines\n- Use Java string formatting and LocalDateTime for timestamp\n\nThis implements the basic logic and output of the RPG code for printing a simple formatted report in Java. The output could be redirected to a file or printer instead of just printing to console."
+  const getRepositoryList = async (id) => {
+    const jwtToken = sessionStorage.getItem("jwt");
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/create-git-repo/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      })
+      const data = await response.json();
+      console.log(data)
+      setGitreplist(data)
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   return (
-    <div
-      className='w-full h-full'
+    <>
+     <div
+      className='w-full' style={{height:'95%'}}
     >
 
       <Split initialPrimarySize={(isGenButtonClicked) ? "50%" : "100%"} minPrimarySize="30%" renderSplitter={renderSplitter}>
@@ -465,15 +595,16 @@ export default function InteractiveArea() {
             </div>
           </div>
         </div>
-        <div className='h-full' style={{
+        <div className='h-full w-full' style={{
           background: 'black'
         }}>
-          <div style={{ height: '100%' }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#000' }}>
-              <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600' }}>
+          <div className='w-full' style={{ height: '100%' }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#000', width:'100%' }}>
+              <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600',overflowX:'scroll',width:'100%'}}>
                 <Tab sx={{ color: 'white' }} label="Business Logic" {...a11yProps(0)} />
                 <Tab sx={{ color: 'white' }} label="Mermaid Diagram" {...a11yProps(1)} />
                 <Tab sx={{ color: 'white' }} label="Java Code" {...a11yProps(2)} />
+                {/* <Tab sx={{ color: 'white' }} label="High level Business Logic" {...a11yProps(3)} /> */}
               </Tabs>
             </Box>
 
@@ -483,7 +614,63 @@ export default function InteractiveArea() {
               <div style={{
                 height: '100%'
               }} >
+                <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#001', width:'100%' }}>
+                  <Tabs value={blvalue} onChange={handleBLChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600',overflowX:'scroll',width:'100%'}}>
+                    <Tab sx={{ color: 'white' }} label="High Level" {...a11yProps(0)} />
+                    <Tab sx={{ color: 'white' }} label="Individual" {...a11yProps(1)} />
+                  </Tabs>
+                </Box>
+                <CustomTabPanel value={blvalue} index={0}>
 
+              <div style={{
+                height: '92%'
+              }} >
+                
+                {
+                  (highlogicLoader) ? <>
+
+                    {<div className='flex h-full w-full justify-center items-center'  ><CircularProgress /></div>}
+                  </>
+                    :
+                    <>
+                      {
+
+                        (isHighEditing) ?
+                          <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '92%' }}>
+                            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                              <textarea className='vscDark vscDarkPre w-full' style={{ width: '100%', height: '98%' }} type="text" value={highBusinessLogic} onChange={handleHighInputChange} />
+                              <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
+                                <IconButton onClick={() => handleHighSaveClick(selectedLogicID)}>
+                                  <Save sx={{ color: '#FFF' }} />
+                                </IconButton>
+                              </div>
+                            </div>
+                          </div>
+
+
+                          :
+                          <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '100%' }}>
+                            <div style={{ position: 'relative', width: '100%' }}>
+                              <LogicBlock businessLogic={highBusinessLogic} />
+                              <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
+                                <IconButton onClick={handleHighEditClick}>
+                                  <Edit sx={{ color: '#FFF' }} />
+                                </IconButton>
+                              </div>
+                            </div>
+                          </div>
+
+                      }</>
+                }
+
+              </div>
+                </CustomTabPanel>
+                <CustomTabPanel value={blvalue} index={1}>
+
+              <div style={{
+                height: '92%'
+              }} >
+                
                 {
                   (logicLoader) ? <>
 
@@ -494,7 +681,7 @@ export default function InteractiveArea() {
                       {
 
                         (isEditing) ?
-                          <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '100%' }}>
+                          <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '92%' }}>
                             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                               <textarea className='vscDark vscDarkPre w-full' style={{ width: '100%', height: '98%' }} type="text" value={businessLogic} onChange={handleInputChange} />
                               <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
@@ -522,10 +709,20 @@ export default function InteractiveArea() {
                 }
 
               </div>
+                </CustomTabPanel>
+              </div>
             </CustomTabPanel>
 
             <CustomTabPanel value={value} index={1}>
-              <div className='flex p-5' style={{ background: 'black', width: '100%', height: '100%' }}>
+              <div style={{ background: 'black', width: '100%', height: '100%' }}>
+              <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#001', width:'100%' }}>
+                  <Tabs value={mdvalue} onChange={handleMDChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600',overflowX:'scroll',width:'100%'}}>
+                    <Tab sx={{ color: 'white' }} label="High Level" {...a11yProps(0)} />
+                    <Tab sx={{ color: 'white' }} label="Individual" {...a11yProps(1)} />
+                  </Tabs>
+                </Box>
+                <CustomTabPanel value={mdvalue} index={1}>
+              <div className='flex p-5' style={{ background: 'black', width: '100%', height: '93%' }}>
 
                 {
                   (diagramLoader) ? <>
@@ -575,6 +772,10 @@ export default function InteractiveArea() {
               </div>
 
             </CustomTabPanel>
+
+              </div>
+
+            </CustomTabPanel>
             <CustomTabPanel value={value} index={2}>
               <div className='flex py-7 px-4' style={{ background: 'black', width: '100%', height: '100%' }}>
 
@@ -619,6 +820,97 @@ export default function InteractiveArea() {
           </div>
         </div>
       </Split>
+
+     
     </div >
+    <div className='status-bar'>
+      <div className='git-bar'>
+       
+          <div className='git-bar-left'>
+          <Typography>
+                  Branch
+          </Typography>
+          <Select className='select' value={branch} onChange={handleBranchChange}>
+            <MenuItem value={10}>Main</MenuItem>
+            <MenuItem value={20}>Branch 1</MenuItem>
+            <MenuItem value={30}>Branch 2</MenuItem>
+          </Select>
+          </div>
+        
+          <div className='mr-4'>
+          <Button variant='contained' onClick={handleOpenModal}>
+                  <Typography >
+                    Commit & Push
+                  </Typography>
+                </Button>
+          </div>    
+      </div>
+    </div>
+    <Modal
+    open={openModal}
+    onClose={handleCloseModal}
+    aria-labelledby="modal-title"
+    aria-describedby="modal-description"
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <div className="modal-content bg-background">
+          <GitPushModal handleOpenBranchModal={handleOpenBranchModal} handleOpenRepModal={handleOpenRepModal} handleCloseModal={handleCloseModal} gitreplist={gitreplist} handleOpenSelectFiles={handleOpenSelectFiles} selectedfilelist={selectedfilelist} setSelectedfilelist={setSelectedfilelist} branchlist={branchlist} setBranchlist={setBranchlist} getBranchList={getBranchList} setRepinfo={setRepinfo}/>
+        </div>
+  </Modal>
+  <Modal
+    open={openBranchModal}
+    onClose={handleCloseBranchModal}
+    aria-labelledby="modal-title"
+    aria-describedby="modal-description"
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <div className="modal-content bg-background">
+          <NewBranchModal handleCloseBranchModal={handleCloseBranchModal} branchlist={branchlist} repinfo={repinfo} getBranchList={getBranchList}/>
+        </div>
+  </Modal>
+  <Modal
+    open={openRepModal}
+    onClose={handleCloseRepModal}
+    aria-labelledby="modal-title"
+    aria-describedby="modal-description"
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <div className="modal-content bg-background">
+          <NewRepModal handleCloseRepModal={handleCloseRepModal}/>
+        </div>
+  </Modal>
+  <Modal
+    open={openSelectFilesModal}
+    onClose={handleCloseSelectFiles}
+    aria-labelledby="modal-title"
+    aria-describedby="modal-description"
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <div className="modal-content bg-background">
+          {/* <NewRepModal handleCloseSelectFiles={handleCloseSelectFiles}/> */}
+          <SelectFilesModal folderId={props.folderId} openSelectFilesModal={openSelectFilesModal} selectedfilelist={selectedfilelist} setSelectedfilelist={setSelectedfilelist} handleCloseSelectFiles={handleCloseSelectFiles}/>
+        </div>
+  </Modal>
+
+
+    </>
+     
+    
   )
 }

@@ -109,8 +109,9 @@ def push_to_github(access_token, repository_url, java_code_entries, branch_name=
                 for folder_name in folder_structure:
                     current_dir = os.path.join(current_dir, folder_name)
                     os.makedirs(current_dir, exist_ok=True)
-
-                file_path = os.path.join(current_dir, file_upload.filename)
+                filename, extension = os.path.splitext(file_upload.filename)
+                new_filename = f"{filename}.java"
+                file_path = os.path.join(current_dir, new_filename)
                 with open(file_path, 'w') as file:
                     file.write(java_code_entry.code)
 

@@ -15,7 +15,7 @@ from .models import FolderUpload, FileUpload,User,Logic,JavaCode,MermaidDiagrams
 import zipfile
 from .authorisation import CustomIsAuthenticated,TokenAuthentication
 import tempfile
-from .serializers import FileSerializer,LogicSerializer,JavaCodeSerializer,MermaidDiagramSerializer
+from .serializers import FileSerializer,LogicSerializer,JavaCodeSerializer,MermaidDiagramSerializer,GithubRepositorySerializer
 from django.http import Http404
 import requests
 from django.shortcuts import redirect
@@ -869,13 +869,13 @@ class CloneRepositoryAPIView(APIView):
                         repository_name = self.get_repository_name_from_url(repository_url)
 
                     cloned_repo = ClonedRepository(
-                        users=[user_profile],  
-                        repository_name=repository_name,  
+                        repository_name=repository_name,
                         repository_url=repository_url,
                         branch=branch_name,
-                        folder_id=parent_folder  
+                        folder_id=parent_folder
                     )
                     cloned_repo.save()
+                    cloned_repo.users.set([user_profile])
                 
             return True
         except git.exc.GitCommandError as e:
@@ -900,6 +900,18 @@ class CloneRepositoryAPIView(APIView):
 class CreateGitHubRepository(APIView):
     permission_classes = [CustomIsAuthenticated]
     authentication_classes = [TokenAuthentication]
+
+    def get(self,request):
+        username = request.user
+        repos = GitHubRepository.objects.filter(collaborators__username=username)
+        unique_repository_urls = set()
+        unique_repos = []
+        for repo in repos:
+            if repo.repository_url not in unique_repository_urls:
+                unique_repos.append(repo)
+                unique_repository_urls.add(repo.repository_url)
+        serializer = GithubRepositorySerializer(unique_repos,many=True)
+        return Response(serializer.data)
 
     def post(self, request):
         username = request.user
@@ -1035,10 +1047,13 @@ class ListBranches(APIView):
     permission_classes = [CustomIsAuthenticated]
     authentication_classes = [TokenAuthentication]
 
-    def get(self, request, owner, repo):
+    def post(self, request):
         username = request.user
         user_profile = User.objects.get(username=username)
         access_token = user_profile.access_token
+        url = request.data.get('url')
+        owner = get_git_repo_owner(url)
+        repo = request.data.get('name')
         branches = self.get_repository_branches(access_token, owner, repo)
 
         if branches:
@@ -1131,19 +1146,21 @@ class PushCodeToGitHub(APIView):
         repository_url = request.data.get('repository_url') 
         branch = request.data.get('branch')
         commit_message = request.data.get('commit_message')
-        file_id = request.data.get('file_id')
+        file_ids = request.data.get('file_ids')
+        destination = request.data.get('destination')
         try:
             username = request.user
             user_profile = User.objects.get(username=username)
             access_token = user_profile.access_token
 
-            file = FileUpload.objects.get(fileId=file_id)
-            root_folder_id = file.rootFolder
-            code_files = JavaCode.objects.filter(file__rootFolder=root_folder_id)
+            # file = FileUpload.objects.get(fileId=file_id)
+            # root_folder_id = file.rootFolder
+            # code_files = JavaCode.objects.filter(file__rootFolder=root_folder_id)
+            code_files = JavaCode.objects.filter(file__fileId__in=file_ids,user=self.request.user,language_converted = destination)
             response = push_to_github(access_token, repository_url, code_files ,branch , commit_message)
             if response:
-                repository_info = GitHubRepository.objects.get(repository_url=repository_url, branch=branch)
-                self.update_repository_info(code_files=code_files,repository_info=repository_info)
+                # repository_info = GitHubRepository.objects.get(repository_url=repository_url, branch=branch)
+                # self.update_repository_info(code_files=code_files,repository_info=repository_info)
                 return Response({'Message': "Pushed Successfully"}, status=status.HTTP_200_OK)
             else:
                 return Response({'Error': "Git Push Failed"})

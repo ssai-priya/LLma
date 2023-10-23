@@ -39,6 +39,7 @@ urlpatterns = [
     path('create-git-repo/',views.CreateGitHubRepository.as_view(),name='create_git_repo'),
     path('push-to-git/',views.PushCodeToGitHub.as_view(),name='push_to_git'),
     path('create-branch/',views.CreateGitHubBranch.as_view(),name='create_branch'),
+    path('get-branch/',views.ListBranches.as_view(),name='list_branch'),
     path('git-pull/',views.PullCodeFromGitHub.as_view(),name='git_pull'),
 
 
