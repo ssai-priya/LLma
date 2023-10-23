@@ -46,7 +46,7 @@ def code_to_business_logic(code,source):
         example_code=dspf_examplea1
     
     template='''Pretend to be an expert in {source} code and provide a comprehensive explanation of the user-provided {source} code, converting it into
-    understandable business logic. If the destinationiables in the code have values relevant to the business logic, please include them.I am interested 
+    understandable business logic. If the variables in the code have values relevant to the business logic, please include them.I am interested 
     solely in the business logic and do not require introductory statements such as 'Here is the business logic extracted from this code.'
     Your task also involves analyzing the code, identifying its core functionality, and presenting this functionality clearly and concisely. 
     Ensure that the extracted business logic is well-documented.
