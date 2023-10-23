@@ -14,6 +14,29 @@ export default function NewBranchModal(props){
     const handleBranchChange = (event) => {
         setBranch(event.target.value);
     }; 
+    const createnewbranch = async (id) => {
+        const jwtToken = sessionStorage.getItem("jwt");
+        try {
+          const response = await fetch(`http://127.0.0.1:8000/create-branch/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${jwtToken}`,
+            },
+            body: JSON.stringify({
+                'repository_url': props.repinfo.repository_url,
+                'branch_name': name,
+                'start_branch':branch
+            })
+          })
+          const data = await response.json();
+          props.handleCloseBranchModal()
+          props.getBranchList()
+          console.log(data)
+        } catch (error) {
+          console.log(error)
+        }
+      }
 
     return(
         <div className="modal-box h-full">
@@ -34,9 +57,11 @@ export default function NewBranchModal(props){
                 Select Start Branch
                 </Typography>
                 <Select className='select' value={branch} onChange={handleBranchChange}>
-                    <MenuItem value={1}>Main</MenuItem>
-                    <MenuItem value={2}>Rep 1</MenuItem>
-                    <MenuItem value={3}>Rep 2</MenuItem>
+                {
+                        props.branchlist?.map((item, index) => (
+                            <MenuItem value={item}>{item}</MenuItem>
+                          ))
+                    }
                 </Select>
             </div>
             <Divider className="divider"></Divider>
@@ -44,7 +69,7 @@ export default function NewBranchModal(props){
                 <Button className="cancel" onClick={props.handleCloseBranchModal} >
                     Cancel
                 </Button>
-                <Button variant="contained" className="push">
+                <Button variant="contained" className="push" onClick={createnewbranch}>
                     Create
                 </Button>
             </DialogActions>

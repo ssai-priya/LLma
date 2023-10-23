@@ -130,12 +130,14 @@ export default function InteractiveArea(props) {
 
 
   const [logicLoader, setLogicLoader] = useState(false)
+  const [highlogicLoader, setHighLogicLoader] = useState(false)
   const [diagramLoader, setDiagramLoader] = useState(false)
   const [javaLoader, setJavaLoader] = useState(false)
   const [selectedFile, setSelectedFile] = useState('');
   const [convertingFile, setConvertingFile] = useState('');
   const [branch,setBranch] = useState('');
   const [selectedfilelist,setSelectedfilelist] = useState([])
+  const [repinfo,setRepinfo] = useState(null)
 
   const handleBranchChange = (event) => {
     setBranch(event.target.value);
@@ -144,6 +146,27 @@ export default function InteractiveArea(props) {
   const [openRepModal, setOpenRepModal] = useState(false);
   const [openBranchModal, setOpenBranchModal] = useState(false);
   const [openSelectFilesModal, setOpenSelectFilesModal] = useState(false)
+  const getBranchList = async (id) => {
+    const jwtToken = sessionStorage.getItem("jwt");
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/get-branch/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwtToken}`,
+        },
+        body: JSON.stringify({
+            'url' : repinfo.repository_url,
+            'name': repinfo.repository_name,
+        })
+      })
+      const data = await response.json();
+      console.log(data)
+      setBranchlist(data['branches'])
+    } catch (error) {
+      console.log(error)
+    }
+}
 
   const handleOpenModal = () => {
     getRepositoryList()
@@ -168,6 +191,7 @@ export default function InteractiveArea(props) {
   };
 
   const handleCloseBranchModal = () => {
+    getBranchList()
     setOpenBranchModal(false);
   };
   const handleOpenSelectFiles = () => {
@@ -201,14 +225,19 @@ export default function InteractiveArea(props) {
   const isGenButtonClicked = useAppStore((state) => state.isGenButtonClicked);
   const setIsGenButtonClicked = useAppStore((state) => state.setIsGenButtonClicked)
   const [value, setValue] = useState(0);
+  const [blvalue, setBlValue] = useState(0);
+  const [mdvalue, setMdValue] = useState(0);
   const [merm, setMerm] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isHighEditing, setIsHighEditing] = useState(false);
   const [businessLogic, setBusinessLogic] = useState('');
+  const [highBusinessLogic, setHighBusinessLogic] = useState('');
   const [flowchartCode, setFlowchartCode] = useState('')
   const [classDiagramCode, setClassDiagramCode] = useState('')
   const [javaCode, setJavaCode] = useState('');
   const [gitreplist,setGitreplist] = useState([])
+  const [branchlist,setBranchlist]=useState([])
   const [error, setError] = useState(''); // State to hold the error message
 
   useEffect(() => {
@@ -225,6 +254,9 @@ export default function InteractiveArea(props) {
   const handleEditClick = () => {
     setIsEditing(true);
   };
+  const handleHighEditClick = () => {
+    setIsHighEditing(true);
+  };
   function onChange(newValue) {
     setJavaCode(newValue)
     console.log("change", newValue);
@@ -232,7 +264,9 @@ export default function InteractiveArea(props) {
   const handleInputChange = (e) => {
     setBusinessLogic(e.target.value);
   };
-
+  const handleHighInputChange = (e) => {
+    setHighBusinessLogic(e.target.value);
+  };
   const handleSaveClick = async (id) => {
     setIsEditing(false);
     setLogicLoader(true)
@@ -253,6 +287,30 @@ export default function InteractiveArea(props) {
       generateMermaidDiagramsNew(dataGen.id)
       generateJavaCodeNew(dataGen.id)
       setLogicLoader(false)
+    } catch (error) {
+      console.log(error)
+    }
+  };
+  const handleHighSaveClick = async (id) => {
+    setIsHighEditing(false);
+    setHighLogicLoader(true)
+    // setDiagramLoader(true)
+    const jwtToken = sessionStorage.getItem("jwt");
+    try {
+      const genratedResponse = await fetch(`http://127.0.0.1:8000/logic/${selectedFileID}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwtToken}`,
+        },
+        body: JSON.stringify({ 'logic': businessLogic })
+      });
+      const dataGen = await genratedResponse.json();
+      setHighBusinessLogic(dataGen.logic)
+      // setSelectedLogicID(dataGen.id)
+      // generateMermaidDiagramsNew(dataGen.id)
+      // generateJavaCodeNew(dataGen.id)
+      setHighLogicLoader(false)
     } catch (error) {
       console.log(error)
     }
@@ -294,7 +352,14 @@ export default function InteractiveArea(props) {
     mermaid.contentLoaded()
     setMerm(!merm)
   };
-
+  const handleBLChange = (event, newValue) => {
+    setBlValue(newValue);
+  };
+  const handleMDChange = (event, newValue) => {
+    setMdValue(newValue);
+    mermaid.contentLoaded()
+    setMerm(!merm)
+  };
   const generateMermaidDiagrams = async (id) => {
     setDiagramLoader(true)
     const jwtToken = sessionStorage.getItem("jwt");
@@ -530,15 +595,16 @@ export default function InteractiveArea(props) {
             </div>
           </div>
         </div>
-        <div className='h-full' style={{
+        <div className='h-full w-full' style={{
           background: 'black'
         }}>
-          <div style={{ height: '100%' }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#000' }}>
-              <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600' }}>
+          <div className='w-full' style={{ height: '100%' }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#000', width:'100%' }}>
+              <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600',overflowX:'scroll',width:'100%'}}>
                 <Tab sx={{ color: 'white' }} label="Business Logic" {...a11yProps(0)} />
                 <Tab sx={{ color: 'white' }} label="Mermaid Diagram" {...a11yProps(1)} />
                 <Tab sx={{ color: 'white' }} label="Java Code" {...a11yProps(2)} />
+                {/* <Tab sx={{ color: 'white' }} label="High level Business Logic" {...a11yProps(3)} /> */}
               </Tabs>
             </Box>
 
@@ -548,7 +614,63 @@ export default function InteractiveArea(props) {
               <div style={{
                 height: '100%'
               }} >
+                <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#001', width:'100%' }}>
+                  <Tabs value={blvalue} onChange={handleBLChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600',overflowX:'scroll',width:'100%'}}>
+                    <Tab sx={{ color: 'white' }} label="High Level" {...a11yProps(0)} />
+                    <Tab sx={{ color: 'white' }} label="Individual" {...a11yProps(1)} />
+                  </Tabs>
+                </Box>
+                <CustomTabPanel value={blvalue} index={0}>
 
+              <div style={{
+                height: '92%'
+              }} >
+                
+                {
+                  (highlogicLoader) ? <>
+
+                    {<div className='flex h-full w-full justify-center items-center'  ><CircularProgress /></div>}
+                  </>
+                    :
+                    <>
+                      {
+
+                        (isHighEditing) ?
+                          <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '92%' }}>
+                            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                              <textarea className='vscDark vscDarkPre w-full' style={{ width: '100%', height: '98%' }} type="text" value={highBusinessLogic} onChange={handleHighInputChange} />
+                              <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
+                                <IconButton onClick={() => handleHighSaveClick(selectedLogicID)}>
+                                  <Save sx={{ color: '#FFF' }} />
+                                </IconButton>
+                              </div>
+                            </div>
+                          </div>
+
+
+                          :
+                          <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '100%' }}>
+                            <div style={{ position: 'relative', width: '100%' }}>
+                              <LogicBlock businessLogic={highBusinessLogic} />
+                              <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
+                                <IconButton onClick={handleHighEditClick}>
+                                  <Edit sx={{ color: '#FFF' }} />
+                                </IconButton>
+                              </div>
+                            </div>
+                          </div>
+
+                      }</>
+                }
+
+              </div>
+                </CustomTabPanel>
+                <CustomTabPanel value={blvalue} index={1}>
+
+              <div style={{
+                height: '92%'
+              }} >
+                
                 {
                   (logicLoader) ? <>
 
@@ -559,7 +681,7 @@ export default function InteractiveArea(props) {
                       {
 
                         (isEditing) ?
-                          <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '100%' }}>
+                          <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '92%' }}>
                             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                               <textarea className='vscDark vscDarkPre w-full' style={{ width: '100%', height: '98%' }} type="text" value={businessLogic} onChange={handleInputChange} />
                               <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
@@ -587,10 +709,20 @@ export default function InteractiveArea(props) {
                 }
 
               </div>
+                </CustomTabPanel>
+              </div>
             </CustomTabPanel>
 
             <CustomTabPanel value={value} index={1}>
-              <div className='flex p-5' style={{ background: 'black', width: '100%', height: '100%' }}>
+              <div style={{ background: 'black', width: '100%', height: '100%' }}>
+              <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#001', width:'100%' }}>
+                  <Tabs value={mdvalue} onChange={handleMDChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600',overflowX:'scroll',width:'100%'}}>
+                    <Tab sx={{ color: 'white' }} label="High Level" {...a11yProps(0)} />
+                    <Tab sx={{ color: 'white' }} label="Individual" {...a11yProps(1)} />
+                  </Tabs>
+                </Box>
+                <CustomTabPanel value={mdvalue} index={1}>
+              <div className='flex p-5' style={{ background: 'black', width: '100%', height: '93%' }}>
 
                 {
                   (diagramLoader) ? <>
@@ -636,6 +768,10 @@ export default function InteractiveArea(props) {
 
                     </div>
                 }
+
+              </div>
+
+            </CustomTabPanel>
 
               </div>
 
@@ -722,7 +858,7 @@ export default function InteractiveArea(props) {
     }}
   >
     <div className="modal-content bg-background">
-          <GitPushModal handleOpenBranchModal={handleOpenBranchModal} handleOpenRepModal={handleOpenRepModal} handleCloseModal={handleCloseModal} gitreplist={gitreplist} handleOpenSelectFiles={handleOpenSelectFiles} selectedfilelist={selectedfilelist} setSelectedfilelist={setSelectedfilelist}/>
+          <GitPushModal handleOpenBranchModal={handleOpenBranchModal} handleOpenRepModal={handleOpenRepModal} handleCloseModal={handleCloseModal} gitreplist={gitreplist} handleOpenSelectFiles={handleOpenSelectFiles} selectedfilelist={selectedfilelist} setSelectedfilelist={setSelectedfilelist} branchlist={branchlist} setBranchlist={setBranchlist} getBranchList={getBranchList} setRepinfo={setRepinfo}/>
         </div>
   </Modal>
   <Modal
@@ -737,7 +873,7 @@ export default function InteractiveArea(props) {
     }}
   >
     <div className="modal-content bg-background">
-          <NewBranchModal handleCloseBranchModal={handleCloseBranchModal}/>
+          <NewBranchModal handleCloseBranchModal={handleCloseBranchModal} branchlist={branchlist} repinfo={repinfo} getBranchList={getBranchList}/>
         </div>
   </Modal>
   <Modal

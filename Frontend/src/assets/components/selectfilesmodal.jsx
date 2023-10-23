@@ -16,8 +16,9 @@ export default function SelectFilesModal(props){
   const jwtToken = sessionStorage.getItem('jwt');
   const [selectedFiles, setSelectedFiles] = useState(props.selectedfilelist);
   const handleAdd = () => {
-    const newSelectedfilelist = [...props.selectedfilelist, ...selectedFiles];
+    const newSelectedfilelist = [...selectedFiles];
     props.setSelectedfilelist(newSelectedfilelist);
+    console.log(newSelectedfilelist)
     props.handleCloseSelectFiles();
   };
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function SelectFilesModal(props){
       setFolderData({ ...folderData });
     };
     const handleFileSelect = (file) => {
+        console.log(file.id)
         const isSelected = selectedFiles.some((selectedFile) => selectedFile.id === file.id);
     
         if (isSelected) {

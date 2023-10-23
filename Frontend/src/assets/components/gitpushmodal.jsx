@@ -9,16 +9,16 @@ export default function GitPushModal(props){
     const [rep,setRep] = useState('');
     const [com,setCom] = useState('');
     const [branch,setBranch] = useState('');
-    const [branchList,setBranchList] = useState([]);
     const [repinfo,setRepinfo] = useState(null)
     const handleRepChange = (event) => {
         const selectedRepositoryName = event.target.value;
         const selectedRepository = props.gitreplist.find((item) => item.repository_name === selectedRepositoryName);
         setRepinfo(selectedRepository);
+        props.setRepinfo(selectedRepository)
         setRep(selectedRepositoryName);
     };
     useEffect(()=>{
-        getBranchList()
+        props.getBranchList()
     },[repinfo])
     const handleComChange = (event) => {
         setCom(event.target.value);
@@ -27,23 +27,27 @@ export default function GitPushModal(props){
         setBranch(event.target.value);
     };
     
-    const getBranchList = async (id) => {
+    const handlegitpush = async (id) => {
         const jwtToken = sessionStorage.getItem("jwt");
+        const idList = props.selectedfilelist?.map(item => item.id);
         try {
-          const response = await fetch(`http://127.0.0.1:8000/get-branch/`, {
+          const response = await fetch(`http://127.0.0.1:8000/push-to-git/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${jwtToken}`,
             },
             body: JSON.stringify({
-                'url' : repinfo.repository_url,
-                'name': repinfo.repository_name,
+                'repository_url' : repinfo.repository_url,
+                'branch': branch,
+                'commit_message':com,
+                'file_ids':idList,
+                'destination':'Java'
             })
           })
           const data = await response.json();
           console.log(data)
-          setBranchList(data['branches'])
+          props.handleCloseModal()
         } catch (error) {
           console.log(error)
         }
@@ -88,7 +92,7 @@ export default function GitPushModal(props){
                 </Typography>
                 <Select className='select' value={branch} onChange={handleBranchChange}>
                     {
-                        branchList?.map((item, index) => (
+                        props.branchlist?.map((item, index) => (
                             <MenuItem value={item}>{item}</MenuItem>
                           ))
                     }
@@ -107,7 +111,7 @@ export default function GitPushModal(props){
                 <Button className="cancel" onClick={props.handleCloseModal}>
                     Cancel
                 </Button>
-                <Button variant="contained" className="push">
+                <Button variant="contained" className="push" onClick={handlegitpush}>
                     Push
                 </Button>
             </DialogActions>
