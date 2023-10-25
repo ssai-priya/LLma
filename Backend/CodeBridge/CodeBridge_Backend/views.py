@@ -446,6 +446,8 @@ class LogicDetailAPIViewNew(APIView):
     authentication_classes = [TokenAuthentication]
 
     def get_object(self, file_id, logic_id=None):
+        username = self.request.user
+        user = User.objects.get(username=username)
         try:
             file = FileUpload.objects.get(fileId=file_id, user=self.request.user)
             if logic_id:
@@ -453,6 +455,17 @@ class LogicDetailAPIViewNew(APIView):
                 return logic
             return file
         except FileUpload.DoesNotExist:
+            try:
+                file = FileUpload.objects.get(fileId=file_id)
+                shareable_link = ShareCode.objects.get(folder_structure__folderId=file.rootFolder)
+                if user in shareable_link.users.all():
+                    file = FileUpload.objects.get(fileId=file_id)
+                    if logic_id:
+                        logic = Logic.objects.get(id=logic_id, file=file)
+                        return logic
+                    return file
+            except:
+                return Response({'error': 'File not found'}, status=404)
             raise Http404
         except Logic.DoesNotExist:
             raise Http404
@@ -461,19 +474,21 @@ class LogicDetailAPIViewNew(APIView):
         try:
             folder = FolderUpload.objects.get(folderId=folder_structure_id)
             owner = folder.user
+            user = User.objects.get(username=self.request.user)
 
             if owner.username == self.request.user:
                 shareable_link = ShareCode.objects.get(folder_structure_id=folder_structure_id)
                 users_with_access = shareable_link.users.all()
-                return [user.username for user in users_with_access]
+                return users_with_access
 
             shareable_link = ShareCode.objects.get(folder_structure_id=folder_structure_id)
-            if self.request.user in shareable_link.users.values_list('username', flat=True):
+            if user in shareable_link.users.all():
                 users_with_access = shareable_link.users.all()
                 if owner not in users_with_access:
                     users_with_access = list(users_with_access)
+                    users_with_access.remove(user)
                     users_with_access.append(owner)
-                return [user.username for user in users_with_access]
+                return users_with_access
 
         except (FolderUpload.DoesNotExist, ShareCode.DoesNotExist, User.DoesNotExist):
             pass
@@ -484,8 +499,8 @@ class LogicDetailAPIViewNew(APIView):
         file = self.get_object(file_id)
         users = self.get_users_with_access(file.rootFolder)
         try:
-            logic = Logic.objects.get(file=file, user=request.user)
-            serializer = LogicSerializer(logic)
+            logics = Logic.objects.filter(file=file, user__in=users)
+            serializer = LogicSerializer(logics, many=True)
         except Logic.DoesNotExist:
             return Response({'error': 'File not found'}, status=404)
         return Response(serializer.data)
@@ -571,6 +586,31 @@ class CodeGenAPIViewNew(APIView):
             raise Http404
         except Logic.DoesNotExist:
             raise Http404
+        
+    def get_users_with_access(self,folder_structure_id):
+        try:
+            folder = FolderUpload.objects.get(folderId=folder_structure_id)
+            owner = folder.user
+            user = User.objects.get(username=self.request.user)
+
+            if owner.username == self.request.user:
+                shareable_link = ShareCode.objects.get(folder_structure_id=folder_structure_id)
+                users_with_access = shareable_link.users.all()
+                return users_with_access
+
+            shareable_link = ShareCode.objects.get(folder_structure_id=folder_structure_id)
+            if user in shareable_link.users.all():
+                users_with_access = shareable_link.users.all()
+                if owner not in users_with_access:
+                    users_with_access = list(users_with_access)
+                    users_with_access.remove(user)
+                    users_with_access.append(owner)
+                return users_with_access
+
+        except (FolderUpload.DoesNotExist, ShareCode.DoesNotExist, User.DoesNotExist):
+            pass
+
+        return []
 
     def generate_code(self, file_id, logic_id, source, destination):
         file = self.get_object(file_id)
@@ -599,10 +639,11 @@ class CodeGenAPIViewNew(APIView):
         else:
             return None
 
-    def get(self, request, file_id, logic_id):
+    def get(self, request, file_id):
         file = self.get_object(file_id)
-        logic = self.get_object(file_id, logic_id)
-        code = JavaCode.objects.filter(file=file, logic=logic, user=request.user)
+        # logic = self.get_object(file_id, logic_id)
+        users = self.get_users_with_access(file.rootFolder)
+        code = JavaCode.objects.filter(file=file,  user__in=users)
         serializer = JavaCodeSerializer(code, many=True)
         return Response(serializer.data)
 
@@ -680,6 +721,31 @@ class MermaidAPIViewNew(APIView):
             raise Http404
         except Logic.DoesNotExist:
             raise Http404
+        
+    def get_users_with_access(self,folder_structure_id):
+        try:
+            folder = FolderUpload.objects.get(folderId=folder_structure_id)
+            owner = folder.user
+            user = User.objects.get(username=self.request.user)
+
+            if owner.username == self.request.user:
+                shareable_link = ShareCode.objects.get(folder_structure_id=folder_structure_id)
+                users_with_access = shareable_link.users.all()
+                return users_with_access
+
+            shareable_link = ShareCode.objects.get(folder_structure_id=folder_structure_id)
+            if user in shareable_link.users.all():
+                users_with_access = shareable_link.users.all()
+                if owner not in users_with_access:
+                    users_with_access = list(users_with_access)
+                    users_with_access.remove(user)
+                    users_with_access.append(owner)
+                return users_with_access
+
+        except (FolderUpload.DoesNotExist, ShareCode.DoesNotExist, User.DoesNotExist):
+            pass
+
+        return []
 
     def generate_diagrams(self, file_id, logic_id, source, destination):
         file = self.get_object(file_id)
@@ -710,11 +776,11 @@ class MermaidAPIViewNew(APIView):
         else:
             return None
 
-    def get(self, request, file_id, logic_id):
+    def get(self, request, file_id):
         file = self.get_object(file_id)
-        logic = self.get_object(file_id, logic_id)
-        diagram = MermaidDiagrams.objects.get(file=file, logic=logic, user=request.user)
-        serializer = MermaidDiagramSerializer(diagram)
+        users = self.get_users_with_access(file.rootFolder)
+        diagram = MermaidDiagrams.objects.filter(file=file, user__in=users)
+        serializer = MermaidDiagramSerializer(diagram,many=True)
         return Response(serializer.data)
 
     def post(self, request, file_id, logic_id):
