@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group, Permission
+import uuid
 
 
 class User(models.Model):
@@ -69,7 +70,11 @@ class ClonedRepository(models.Model):
         return f"{self.repository_name} (Cloned by {', '.join(user.username for user in self.users.all())})"
     
 
-class GitHubCollaborator(models.Model):
-    repository = models.ForeignKey(GitHubRepository, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+# class GitHubCollaborator(models.Model):
+#     repository = models.ForeignKey(GitHubRepository, on_delete=models.CASCADE)
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
+class ShareCode(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    folder_structure = models.ForeignKey(FolderUpload, on_delete=models.CASCADE)
+    users = models.ManyToManyField(User, related_name='shared_links')

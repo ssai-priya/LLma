@@ -44,4 +44,6 @@ urlpatterns = [
     path('api/business_logic/<str:folder_path>/', views.HigherLevelBusinessLogic.as_view(), name='business-logic'),
     path('api/mermaid-diagram/<str:folder_path>/', views.HigherLevelMermaidDiagram.as_view(), name='mermaid_diagram'),
     path('api/mermaid_flowchart/<str:folder_path>/', views.HigherLevelMermaidFlowchart.as_view(), name='mermaid_flowchart'),
+    path('gen-share-code/',views.GenerateUUID.as_view(),name='generate_share_code'),
+    path('get-access/',views.AccessRepository.as_view(),name='get_access_to_repository'),
 ]

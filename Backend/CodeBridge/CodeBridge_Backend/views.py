@@ -10,11 +10,11 @@ import os
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import FolderUpload, FileUpload,User,Logic,JavaCode,MermaidDiagrams,GitHubRepository,GitHubCollaborator
+from .models import FolderUpload, FileUpload,User,Logic,JavaCode,MermaidDiagrams,GitHubRepository,ShareCode
 import zipfile
 from .authorisation import CustomIsAuthenticated,TokenAuthentication
 import tempfile
-from .serializers import FileSerializer,LogicSerializer,JavaCodeSerializer,MermaidDiagramSerializer,GithubRepositorySerializer
+from .serializers import FileSerializer,LogicSerializer,JavaCodeSerializer,MermaidDiagramSerializer,GithubRepositorySerializer,ShareCodeSerializer
 from django.http import Http404
 import requests
 from django.shortcuts import redirect
@@ -135,6 +135,14 @@ class FolderUploadView(APIView):
                 folder_data = self.get_folder_data(project)
                 return Response(folder_data)
             except FolderUpload.DoesNotExist:
+                try:
+                    project = FolderUpload.objects.get(folderId=folder_id)
+                    shareable_link = ShareCode.objects.get(folder_structure__folderId=folder_id)
+                    if user in shareable_link.users.all():
+                        folder_data = self.get_folder_data(project)
+                        return Response(folder_data)
+                except ShareCode.DoesNotExist:
+                    return Response('Folder not found', status=404)
                 return Response('Folder not found', status=404)
         else:
             projects = FolderUpload.objects.filter(user=user, parentFolder=None)
@@ -145,6 +153,14 @@ class FolderUploadView(APIView):
                 }
                 for project in projects
             ]
+            shareable_links = ShareCode.objects.filter(users=user)
+            for shareable_link in shareable_links:
+                folder_data = FolderUpload.objects.get(folderId=shareable_link.folder_structure.folderId)
+                project_list.append({
+                    'project_id': folder_data.folderId,
+                    'project_name': folder_data.foldername
+                })
+
             return Response(project_list)
 
 
@@ -153,12 +169,21 @@ class FileContentAPIView(APIView):
     authentication_classes = [TokenAuthentication]
 
     def get(self, request, file_id):
+        username = request.user
+        user = User.objects.get(username=username)
         try:
             file = FileUpload.objects.get(fileId=file_id, user=request.user)
             serializer = FileSerializer(file)
             return Response(serializer.data)
         except FileUpload.DoesNotExist:
-            return Response({'error': 'File not found'}, status=404)
+            try:
+                file = FileUpload.objects.get(fileId=file_id)
+                shareable_link = ShareCode.objects.get(folder_structure__folderId=file.rootFolder)
+                if user in shareable_link.users.all():
+                    serializer = FileSerializer(file)
+                return Response(serializer.data)
+            except:
+                return Response({'error': 'File not found'}, status=404)
         
 
 
@@ -431,9 +456,33 @@ class LogicDetailAPIViewNew(APIView):
             raise Http404
         except Logic.DoesNotExist:
             raise Http404
+        
+    def get_users_with_access(self,folder_structure_id):
+        try:
+            folder = FolderUpload.objects.get(folderId=folder_structure_id)
+            owner = folder.user
+
+            if owner.username == self.request.user:
+                shareable_link = ShareCode.objects.get(folder_structure_id=folder_structure_id)
+                users_with_access = shareable_link.users.all()
+                return [user.username for user in users_with_access]
+
+            shareable_link = ShareCode.objects.get(folder_structure_id=folder_structure_id)
+            if self.request.user in shareable_link.users.values_list('username', flat=True):
+                users_with_access = shareable_link.users.all()
+                if owner not in users_with_access:
+                    users_with_access = list(users_with_access)
+                    users_with_access.append(owner)
+                return [user.username for user in users_with_access]
+
+        except (FolderUpload.DoesNotExist, ShareCode.DoesNotExist, User.DoesNotExist):
+            pass
+
+        return []
 
     def get(self, request, file_id):
         file = self.get_object(file_id)
+        users = self.get_users_with_access(file.rootFolder)
         try:
             logic = Logic.objects.get(file=file, user=request.user)
             serializer = LogicSerializer(logic)
@@ -451,7 +500,13 @@ class LogicDetailAPIViewNew(APIView):
         try:
             file = FileUpload.objects.get(fileId=file_id, user=user)
         except FileUpload.DoesNotExist:
-            return Response({'error': 'File not found'}, status=404)
+            try:
+                file = FileUpload.objects.get(fileId=file_id)
+                shareable_link = ShareCode.objects.get(folder_structure__folderId=file.rootFolder)
+                if user in shareable_link.users.all():
+                    file = FileUpload.objects.get(fileId=file_id)
+            except:
+                return Response({'error': 'File not found'}, status=404)
         logic_exists = Logic.objects.filter(file=file, user=user).exists()
         if logic_exists:
             logic = Logic.objects.filter(file=file, user=request.user).first()
@@ -493,6 +548,8 @@ class CodeGenAPIViewNew(APIView):
     authentication_classes = [TokenAuthentication]
 
     def get_object(self, file_id, logic_id=None):
+        username = self.request.user
+        user = User.objects.get(username=username)
         try:
             file = FileUpload.objects.get(fileId=file_id, user=self.request.user)
             if logic_id:
@@ -500,6 +557,17 @@ class CodeGenAPIViewNew(APIView):
                 return logic
             return file
         except FileUpload.DoesNotExist:
+            try:
+                file = FileUpload.objects.get(fileId=file_id)
+                shareable_link = ShareCode.objects.get(folder_structure__folderId=file.rootFolder)
+                if user in shareable_link.users.all():
+                    file = FileUpload.objects.get(fileId=file_id)
+                    if logic_id:
+                        logic = Logic.objects.get(id=logic_id, file=file)
+                        return logic
+                    return file
+            except:
+                return Response({'error': 'File not found'}, status=404)
             raise Http404
         except Logic.DoesNotExist:
             raise Http404
@@ -589,6 +657,8 @@ class MermaidAPIViewNew(APIView):
     authentication_classes = [TokenAuthentication]
 
     def get_object(self, file_id, logic_id=None):
+        username = self.request.user
+        user = User.objects.get(username=username)
         try:
             file = FileUpload.objects.get(fileId=file_id, user=self.request.user)
             if logic_id:
@@ -596,6 +666,17 @@ class MermaidAPIViewNew(APIView):
                 return logic
             return file
         except FileUpload.DoesNotExist:
+            try:
+                file = FileUpload.objects.get(fileId=file_id)
+                shareable_link = ShareCode.objects.get(folder_structure__folderId=file.rootFolder)
+                if user in shareable_link.users.all():
+                    file = FileUpload.objects.get(fileId=file_id)
+                    if logic_id:
+                        logic = Logic.objects.get(id=logic_id, file=file)
+                        return logic
+                    return file
+            except:
+                return Response({'error': 'File not found'}, status=404)
             raise Http404
         except Logic.DoesNotExist:
             raise Http404
@@ -1559,3 +1640,34 @@ class HigherLevelMermaidFlowchart(APIView):
                                                         item,Mermaid_Flowchart)
         
         return mermaid_flowchart
+
+
+class GenerateUUID(APIView):
+    permission_classes = [CustomIsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    def post(self, request):
+        serializer = ShareCodeSerializer(data=request.data)
+        if serializer.is_valid():
+            folder_structure_id = serializer.validated_data['folder_structure_id']
+            print(folder_structure_id)
+            try:
+                folder_structure = FolderUpload.objects.get(folderId=folder_structure_id, user=request.user)
+                shareable_link, created = ShareCode.objects.get_or_create(folder_structure=folder_structure)
+                return Response({'uuid': shareable_link.uuid}, status=status.HTTP_201_CREATED)
+            except FolderUpload.DoesNotExist:
+                return Response({'error': 'Folder not found'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AccessRepository(APIView):
+    permission_classes = [CustomIsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    def post(self, request):
+        uuid = request.data.get('uuid')
+        try:
+            shareable_link = ShareCode.objects.get(uuid=uuid)
+            folder_structure = shareable_link.folder_structure
+            if request.user not in shareable_link.users.all():
+                shareable_link.users.add(request.user)
+            return Response({'repository_id': folder_structure.folderId, 'repositoryname': folder_structure.foldername}, status=status.HTTP_200_OK)
+        except ShareCode.DoesNotExist:
+            return Response({'error': 'Repository not found'}, status=status.HTTP_404_NOT_FOUND)
