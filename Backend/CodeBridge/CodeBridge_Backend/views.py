@@ -747,13 +747,24 @@ class MermaidAPIViewNew(APIView):
 
         return []
 
-    def generate_diagrams(self, file_id, logic_id, source, destination):
+    def generate_diagrams(self, file_id, logic_id, source, destination,diagram_type = None):
         file = self.get_object(file_id)
         logic = self.get_object(file_id, logic_id)
         logic_str = logic.logic
         # var="RPG"
-        mermaidDiagramClass = business_logic_to_mermaid_diagram(logic_str,source, destination)
-        mermaidDiagramFlow = business_logic_to_mermaid_flowchart(logic_str,source, destination)
+        existing_diagram = MermaidDiagrams.objects.filter(file=file, logic=logic, user=self.request.user).first()
+        if existing_diagram:
+            if diagram_type == 'classDiagram':
+                mermaidDiagramClass = business_logic_to_mermaid_diagram(logic_str,source, destination)
+                print('hi',mermaidDiagramClass)
+                mermaidDiagramFlow = existing_diagram.flowChart
+            elif diagram_type == 'flowChart':
+                mermaidDiagramClass = existing_diagram.classDiagram
+                mermaidDiagramFlow = business_logic_to_mermaid_flowchart(logic_str,source, destination)
+        else:
+            mermaidDiagramClass = business_logic_to_mermaid_diagram(logic_str,source, destination)
+            mermaidDiagramFlow = business_logic_to_mermaid_flowchart(logic_str,source, destination)
+
         
         diagram_data = {
             'classDiagram': mermaidDiagramClass,
@@ -762,9 +773,7 @@ class MermaidAPIViewNew(APIView):
             'user': self.request.user,
             'file': file_id
         }
-        
-        existing_diagram = MermaidDiagrams.objects.filter(file=file, logic=logic, user=self.request.user).first()
-        
+                
         if existing_diagram:
             serializer = MermaidDiagramSerializer(existing_diagram, data=diagram_data)
         else:
@@ -806,13 +815,20 @@ class MermaidAPIViewNew(APIView):
                 return Response({'error': 'Failed to generate diagrams'}, status=400)
 
     def put(self, request, file_id, logic_id):
+        diagram_type = request.data.get('diagram_type', None)
         source = request.data.get('source')
         destination = request.data.get('destination')
-        new_diagram_data = self.generate_diagrams(file_id, logic_id, source, destination)
+
+        if diagram_type not in ['classDiagram', 'flowChart']:
+            return Response({'error': 'Invalid diagram_type parameter'}, status=status.HTTP_400_BAD_REQUEST)
+
+        new_diagram_data = self.generate_diagrams(file_id, logic_id, source, destination, diagram_type)
+
         if new_diagram_data:
             return Response(new_diagram_data)
         else:
-            return Response({'error': 'Failed to generate diagrams'}, status=400)
+            return Response({'error': 'Failed to generate diagrams'}, status=status.HTTP_400_BAD_REQUEST)
+
     
     def delete(self, request, file_id, logic_id):
         logic = self.get_object(file_id, logic_id)

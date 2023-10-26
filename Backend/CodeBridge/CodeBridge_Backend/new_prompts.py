@@ -1,7 +1,7 @@
 import os
 from pydantic import BaseModel
 from langchain import LLMChain, PromptTemplate
-from langchain.chat_models import ChatAnthropic
+from langchain.chat_models import ChatAnthropic,ChatOpenAI
 from langchain.output_parsers import StructuredOutputParser,ResponseSchema
 from .prompt_code_to_business_logic import java_example1,python_example1,sql_example1,mongodb_example1,react_example1,angular_example1,rpg_example1,sas_example1, dspf_exampler1,dspf_examplea1
 from .prompt_business_logic_to_mermaid_diagram import java_example2,python_example2,sql_example2,mongodb_example2,react_example2,angular_example2,rpg_example2,sas_example2, dspf_exampler2,dspf_examplea2
@@ -45,27 +45,53 @@ def code_to_business_logic(code,source):
     elif(source.lower()=="dspfa"):
         example_code=dspf_examplea1
     
-    template='''Pretend to be an expert in {source} code and provide a comprehensive explanation of the user-provided {source} code, converting it into
-    understandable business logic. If the variables in the code have values relevant to the business logic, please include them.I am interested 
-    solely in the business logic and in business logic show same all variables and all functions names and also mention function parameter type of each 
-    functions.Your task also involves analyzing the code, identifying its core functionality, and presenting this functionality clearly and concisely. 
-    Ensure that the extracted business logic is well-documented.
-    This process involves multiple steps:
-    1.Analyze the provided {source} code to comprehend its purpose.
-    2.Identify and abstract the key algorithmic steps and logic used in the {source} code.
-    3.Express this logic in a high-level, language-agnostic format.
-    Make sure that the output provides a clear and concise representation of the business logic within the {source} code. If the {source} code is complex,
-    please include comments or explanations to clarify the logic.I am providing an example how to generate business logic 
-    using the {source} code as shown in the following example.
+    template='''Task: Extract Comprehensive Business Logic for {destination} Code Conversion
+
+    In this task, your goal is to thoroughly analyze the provided {source} code and extract the complete business logic contained within it. The
+    objective is to create a clear, detailed, and high-level representation of the business logic that can be easily transformed into {destination} code. 
+    This process involves several essential steps:
+
+    Step 1: Understanding the Source Code
+    - Begin by deeply analyzing the {source} code to comprehend its functionality, purpose, and structure.
+    - Pay attention to variables, functions, and any data structures used within the code.
+
+    Step 2: Identifying Variables and Functions
+    - Identify and list all variables and functions within the code. This includes not only their names but also their data types and any initial 
+    values they might have.
+    - Distinguish between global and local variables.
+    - Note any data dependencies between variables or functions.
+
+    Step 3: Explaining Function Logic
+    - For each function found in the code, provide a detailed explanation of its purpose and the logic it implements.
+    - Specify the parameter types for each function and describe the significance of these parameters within the function's operation.
+    - If a function returns a value, explain the meaning of the returned value and how it relates to the overall business logic.
+
+    Step 4: Expressing the Logic
+    - Present the extracted logic in a high-level, language-agnostic format that captures the essence of the business processes.
+    - Emphasize the sequential flow of operations, conditional statements, loops, and any exceptional cases.
+    - Ensure that the logic is abstracted enough to allow for straightforward translation into {destination} code.
+
+    Step 5: Handling Complexity
+    - If the code is particularly intricate or includes complex algorithms, provide comments, explanations, or visual representations that break 
+    down the logic into more manageable components.
+    - Make any additional notes to clarify the logic, especially for sections that might be challenging to understand.
+
+    The ultimate goal is to deliver a comprehensive and understandable representation of the business logic within the {source} code, making it
+    easier for it to be translated into {destination} language. The extracted logic should be designed to minimize the gap between
+    the {source} code and the eventual {destination} code, ensuring accuracy and efficiency.
+
+    Please note that you should not provide any initial words or sentences apart from the business logic.I am providing an example how to generate 
+    business logic using the {source} code as shown in the following example.
     
     Example:
     {example_code}
     
     Don't give any iniial words and sentence except business logic.
     Now the User will provide {source} code, please generate correct buisness logic as shown in above example.
-    
+
     User: {input}
-    Business_Logic:'''
+    Business_Logic:
+    '''
 
     llm_chain = LLMChain(
         llm = ChatAnthropic(temperature= 0.8,anthropic_api_key=keys.anthropic_key,model = "claude-2.0",max_tokens_to_sample=100000),
@@ -121,7 +147,7 @@ def business_logic_to_mermaid_diagram(logic,source, destination):
     {example_code}
     
     Now the User will provide business logic, please generate correct and running code for mermaid class diagram as shown in above 
-    example without any initial text in a JSON format with "mermaidClassDiagram" as the key.
+    example without any initial text in a JSON format with "mermaid_class_diagram_code" as the key.
     
     User: {input}
     Mermaid_Code:
@@ -194,7 +220,7 @@ def business_logic_to_mermaid_flowchart(logic,source, destination):
     {example_code}
     
     Now the User will provide business logic,generate correct and running code for mermaid Flowchart diagram as shown in 
-    above example without any initial text in a JSON format with "mermaidFlowchart" as the key and make sure that the 
+    above example without any initial text in a JSON format with "mermaid_flowchart_code" as the key and make sure that the 
     blocks areproperly linked in the code.
     
     User: {input}
