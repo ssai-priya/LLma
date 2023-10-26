@@ -16,6 +16,7 @@ class LLM(BaseModel):
     source: str
     message: str
 
+extensions = ['.rpgle', '.sqlrpgle', '.clle', '.RPGLE', '.SQLRPGLE', '.CLLE','.py','.java','.jsx','.tsx','.js','.ts','.sql','.PY','.JAVA','.JSX','.TSX','.JS','.TS','.SQL','.sas','.SAS']
 
 # java to python --java
 
@@ -95,10 +96,10 @@ def code_to_business_logic(code,source):
 
     llm_chain = LLMChain(
         llm = ChatAnthropic(temperature= 0.8,anthropic_api_key=keys.anthropic_key,model = "claude-2.0",max_tokens_to_sample=100000),
-        prompt=PromptTemplate(input_variables=["input","source","example_code"], template=template),
+        prompt=PromptTemplate(input_variables=["input","source","example_code","destination"], template=template),
         verbose=True,
     )
-    logic= llm_chain.predict(input=code,source=source,example_code=example_code)
+    logic= llm_chain.predict(input=code,source=source,example_code=example_code,destination="Java")
     return f"{logic}"
 
 def business_logic_to_mermaid_diagram(logic,source, destination):
@@ -384,30 +385,18 @@ def process_folder_business_logic(folder_path):
     business_logic = ""
     folder_name = os.path.basename(folder_path)
     folder_structure = os.listdir(folder_path)
-    src_path = os.path.join(folder_path, "src")
 
-    if os.path.exists(src_path) and os.path.isdir(src_path):
-        for item in os.listdir(src_path):
-            if item in (".DS_Store", ".gitignore", "_pycache_", "README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
-                continue
-            item_path = os.path.join(src_path, item)
-            if os.path.isdir(item_path):
-                Business_logic = process_folder_business_logic(item_path)
-            else:
+    for item in os.listdir(folder_path):
+        item_path = os.path.join(folder_path, item)
+        if os.path.isdir(item_path):
+            Business_logic = process_folder_business_logic(item_path)
+        else:
+            if item_path.endswith(tuple(extensions)):
                 Business_logic = file_business_logic(item_path)
-
-            business_logic = combine_business_logic(folder_name, folder_structure, business_logic, item, Business_logic)
-    else:
-        for item in os.listdir(folder_path):
-            if item in (".DS_Store", ".gitignore", "_pycache_", "README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
-                continue
-            item_path = os.path.join(folder_path, item)
-            if os.path.isdir(item_path):
-                Business_logic = process_folder_business_logic(item_path)
             else:
-                Business_logic = file_business_logic(item_path)
-                
-            business_logic = combine_business_logic(folder_name, folder_structure, business_logic, item, Business_logic)
+                continue 
+            
+        business_logic = combine_business_logic(folder_name, folder_structure, business_logic, item, Business_logic)
 
     return business_logic
 
@@ -476,34 +465,20 @@ def process_folder_mermaid_diagram(folder_path):
     mermaid_diagram=""
     folder_name=os.path.basename(folder_path)
     folder_structure=os.listdir(folder_path)
-    src_path = os.path.join(folder_path, "src")
-
-    if os.path.exists(src_path) and os.path.isdir(src_path):
-        for item in os.listdir(src_path): 
-            if item in (".DS_Store", ".gitignore","_pycache_","README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
-                continue
-            item_path = os.path.join(src_path, item) 
-            
-            if os.path.isdir(item_path):  
-                Mermaid_Diagram = process_folder_mermaid_diagram(item_path) 
-            else:
+   
+    for item in os.listdir(folder_path):   
+        item_path = os.path.join(folder_path, item) 
+        
+        if os.path.isdir(item_path):  
+            Mermaid_Diagram = process_folder_mermaid_diagram(item_path) 
+        else:
+            if item_path.endswith(tuple(extensions)):
                 Mermaid_Diagram = file_mermaid_diagram(item_path)
-                
-            mermaid_diagram= combine_mermaid_diagram(folder_name,folder_structure,mermaid_diagram,
-                                                    item,Mermaid_Diagram)
-    else:    
-        for item in os.listdir(folder_path):   
-            if item in (".DS_Store", ".gitignore","_pycache_","README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
-                continue
-            item_path = os.path.join(folder_path, item) 
-            
-            if os.path.isdir(item_path):  
-                Mermaid_Diagram = process_folder_mermaid_diagram(item_path) 
             else:
-                Mermaid_Diagram = file_mermaid_diagram(item_path)
-                
-            mermaid_diagram= combine_mermaid_diagram(folder_name,folder_structure,mermaid_diagram,
-                                                    item,Mermaid_Diagram)
+                continue 
+            
+        mermaid_diagram= combine_mermaid_diagram(folder_name,folder_structure,mermaid_diagram,
+                                                item,Mermaid_Diagram)
     
     return mermaid_diagram
 
@@ -555,7 +530,7 @@ def combine_mermaid_flowchart(folder_name,
     '''
 
     llm_chain = LLMChain(
-        llm = ChatAnthropic(temperature= 0.8,model = "claude-2.0",max_tokens_to_sample=100000),
+        llm = ChatAnthropic(temperature= 0.8,anthropic_api_key = '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', model = "claude-2.0", max_tokens_to_sample=100000),
         prompt=PromptTemplate(input_variables=["folder_name","folder_structure","previous_mermaid_flowchart",
                                                "current_directory_name","current_directory_mermaid_flowchart"],partial_variables={"format_instructions":format_instructions}, template=template),
         verbose=True,
@@ -571,34 +546,19 @@ def process_folder_mermaid_flowchart(folder_path):
     mermaid_flowchart=""
     folder_name=os.path.basename(folder_path)
     folder_structure=os.listdir(folder_path)
-    src_path = os.path.join(folder_path, "src")
-
-    if os.path.exists(src_path) and os.path.isdir(src_path):
-        for item in os.listdir(src_path): 
-            
-            if item in (".DS_Store", ".gitignore","_pycache_","README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
-                continue
-            item_path = os.path.join(src_path, item) 
-            if os.path.isdir(item_path):  
-                Mermaid_Flowchart = process_folder_mermaid_flowchart(item_path) 
+    
+    for item in os.listdir(folder_path): 
+        item_path = os.path.join(folder_path, item) 
+        if os.path.isdir(item_path):  
+            Mermaid_Flowchart = process_folder_mermaid_flowchart(item_path) 
+        else:
+            if item_path.endswith(tuple(extensions)):
+                Mermaid_Flowchart = file_mermaid_flowchart(item_path) 
             else:
-                Mermaid_Flowchart = file_mermaid_flowchart(item_path)
-              
-            mermaid_flowchart= combine_mermaid_flowchart(folder_name,folder_structure,mermaid_flowchart,
-                                                    item,Mermaid_Flowchart)
-    else:
-        for item in os.listdir(folder_path): 
+                continue 
             
-            if item in (".DS_Store", ".gitignore","_pycache_","README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
-                continue
-            item_path = os.path.join(folder_path, item) 
-            if os.path.isdir(item_path):  
-                Mermaid_Flowchart = process_folder_mermaid_flowchart(item_path) 
-            else:
-                Mermaid_Flowchart = file_mermaid_flowchart(item_path)   
-            
-            mermaid_flowchart= combine_mermaid_flowchart(folder_name,folder_structure,mermaid_flowchart,
-                                                    item,Mermaid_Flowchart)
+        mermaid_flowchart= combine_mermaid_flowchart(folder_name,folder_structure,mermaid_flowchart,
+                                                item,Mermaid_Flowchart)
     
     return mermaid_flowchart
 

@@ -38,15 +38,15 @@ def get_commit(access_token, owner, repo, default_branch):
         return None
 
 
-# def push_code(local_path, remote_url, branch_name, access_token):
-#     try:
-#         repo = git.Repo(local_path)
-#         origin = repo.create_remote('origin', remote_url)
-#         origin.push(refspec=f'{branch_name}:{branch_name}', auth=(access_token, 'x-oauth-basic'))
-#         return True
-#     except git.exc.GitCommandError as e:
-#         print(f"Error pushing code to GitHub repository: {str(e)}")
-#         return False
+def push_code(local_path, remote_url, branch_name, access_token):
+    try:
+        repo = git.Repo(local_path)
+        origin = repo.create_remote('origin', remote_url)
+        origin.push(refspec=f'{branch_name}:{branch_name}', auth=(access_token, 'x-oauth-basic'))
+        return True
+    except git.exc.GitCommandError as e:
+        print(f"Error pushing code to GitHub repository: {str(e)}")
+        return False
 
 
 def create_github_branch(access_token, owner, repo, branch_name, start_sha):
