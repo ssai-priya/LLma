@@ -1,5 +1,6 @@
 import os
 from pydantic import BaseModel
+from dotenv import load_dotenv
 from langchain import LLMChain, PromptTemplate
 from langchain.chat_models import ChatAnthropic
 from langchain.output_parsers import StructuredOutputParser,ResponseSchema
@@ -9,13 +10,15 @@ from .prompt_business_logic_to_mermaid_flowchart import java_example3,python_exa
 from .prompt_business_logic_to_code import java_example4,python_example4,sql_example4,mongodb_example4,react_example4,angular_example4,rpg_example4,sas_example4, dspf_exampler4,dspf_examplea4
 import keys
 
-
-# ChatAnthropic.api_key=keys.anthropic_key
+load_dotenv()
+ChatAnthropic.api_key=os.getenv("ANTHROPIC_API_KEY")
+ChatAnthropic.api_key=keys.anthropic_key
 
 class LLM(BaseModel):
     source: str
     message: str
 
+extensions = ['.rpgle', '.sqlrpgle', '.clle', '.RPGLE', '.SQLRPGLE', '.CLLE','.py','.java','.jsx','.tsx','.js','.ts','.sql','.PY','.JAVA','.JSX','.TSX','.JS','.TS','.SQL','.sas','.SAS']
 
 # java to python --java
 
@@ -45,34 +48,60 @@ def code_to_business_logic(code,source):
     elif(source.lower()=="dspfa"):
         example_code=dspf_examplea1
     
-    template='''Pretend to be an expert in {source} code and provide a comprehensive explanation of the user-provided {source} code, converting it into
-    understandable business logic. If the destinationiables in the code have values relevant to the business logic, please include them.I am interested 
-    solely in the business logic and in business logic show same all variables and all functions names and also mention function parameter type of each 
-    functions.Your task also involves analyzing the code, identifying its core functionality, and presenting this functionality clearly and concisely. 
-    Ensure that the extracted business logic is well-documented.
-    This process involves multiple steps:
-    1.Analyze the provided {source} code to comprehend its purpose.
-    2.Identify and abstract the key algorithmic steps and logic used in the {source} code.
-    3.Express this logic in a high-level, language-agnostic format.
-    Make sure that the output provides a clear and concise representation of the business logic within the {source} code. If the {source} code is complex,
-    please include comments or explanations to clarify the logic.I am providing an example how to generate business logic 
-    using the {source} code as shown in the following example.
+    template='''Task: Extract Comprehensive Business Logic for {destination} Code Conversion
+
+    In this task, your goal is to thoroughly analyze the provided {source} code and extract the complete business logic contained within it. The
+    objective is to create a clear, detailed, and high-level representation of the business logic that can be easily transformed into {destination} code. 
+    This process involves several essential steps:
+
+    Step 1: Understanding the Source Code
+    - Begin by deeply analyzing the {source} code to comprehend its functionality, purpose, and structure.
+    - Pay attention to variables, functions, and any data structures used within the code.
+
+    Step 2: Identifying Variables and Functions
+    - Identify and list all variables and functions within the code. This includes not only their names but also their data types and any initial 
+    values they might have.
+    - Distinguish between global and local variables.
+    - Note any data dependencies between variables or functions.
+
+    Step 3: Explaining Function Logic
+    - For each function found in the code, provide a detailed explanation of its purpose and the logic it implements.
+    - Specify the parameter types for each function and describe the significance of these parameters within the function's operation.
+    - If a function returns a value, explain the meaning of the returned value and how it relates to the overall business logic.
+
+    Step 4: Expressing the Logic
+    - Present the extracted logic in a high-level, language-agnostic format that captures the essence of the business processes.
+    - Emphasize the sequential flow of operations, conditional statements, loops, and any exceptional cases.
+    - Ensure that the logic is abstracted enough to allow for straightforward translation into {destination} code.
+
+    Step 5: Handling Complexity
+    - If the code is particularly intricate or includes complex algorithms, provide comments, explanations, or visual representations that break 
+    down the logic into more manageable components.
+    - Make any additional notes to clarify the logic, especially for sections that might be challenging to understand.
+
+    The ultimate goal is to deliver a comprehensive and understandable representation of the business logic within the {source} code, making it
+    easier for it to be translated into {destination} language. The extracted logic should be designed to minimize the gap between
+    the {source} code and the eventual {destination} code, ensuring accuracy and efficiency.
+
+    Please note that you should not provide any initial words or sentences apart from the business logic.I am providing an example how to generate 
+    business logic using the {source} code as shown in the following example.
     
     Example:
     {example_code}
     
     Don't give any iniial words and sentence except business logic.
     Now the User will provide {source} code, please generate correct buisness logic as shown in above example.
-    
+
     User: {input}
-    Business_Logic:'''
+    Business_Logic:
+    '''
 
     llm_chain = LLMChain(
         llm = ChatAnthropic(temperature= 0.8,anthropic_api_key=keys.anthropic_key,model = "claude-2.0",max_tokens_to_sample=100000),
-        prompt=PromptTemplate(input_variables=["input","source","example_code"], template=template),
+        prompt=PromptTemplate(input_variables=["input","source","example_code","destination"], template=template),
         verbose=True,
     )
-    logic= llm_chain.predict(input=code,source=source,example_code=example_code)
+    logic= llm_chain.predict(input=code,source=source,example_code=example_code,destination="Java")
     return f"{logic}"
 
 def business_logic_to_mermaid_diagram(logic,source, destination):
@@ -358,30 +387,18 @@ def process_folder_business_logic(folder_path):
     business_logic = ""
     folder_name = os.path.basename(folder_path)
     folder_structure = os.listdir(folder_path)
-    src_path = os.path.join(folder_path, "src")
 
-    if os.path.exists(src_path) and os.path.isdir(src_path):
-        for item in os.listdir(src_path):
-            if item in (".DS_Store", ".gitignore", "_pycache_", "README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
-                continue
-            item_path = os.path.join(src_path, item)
-            if os.path.isdir(item_path):
-                Business_logic = process_folder_business_logic(item_path)
-            else:
+    for item in os.listdir(folder_path):
+        item_path = os.path.join(folder_path, item)
+        if os.path.isdir(item_path):
+            Business_logic = process_folder_business_logic(item_path)
+        else:
+            if item_path.endswith(tuple(extensions)):
                 Business_logic = file_business_logic(item_path)
-
-            business_logic = combine_business_logic(folder_name, folder_structure, business_logic, item, Business_logic)
-    else:
-        for item in os.listdir(folder_path):
-            if item in (".DS_Store", ".gitignore", "_pycache_", "README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
-                continue
-            item_path = os.path.join(folder_path, item)
-            if os.path.isdir(item_path):
-                Business_logic = process_folder_business_logic(item_path)
             else:
-                Business_logic = file_business_logic(item_path)
-                
-            business_logic = combine_business_logic(folder_name, folder_structure, business_logic, item, Business_logic)
+                continue 
+            
+        business_logic = combine_business_logic(folder_name, folder_structure, business_logic, item, Business_logic)
 
     return business_logic
 
@@ -450,34 +467,20 @@ def process_folder_mermaid_diagram(folder_path):
     mermaid_diagram=""
     folder_name=os.path.basename(folder_path)
     folder_structure=os.listdir(folder_path)
-    src_path = os.path.join(folder_path, "src")
-
-    if os.path.exists(src_path) and os.path.isdir(src_path):
-        for item in os.listdir(src_path): 
-            if item in (".DS_Store", ".gitignore","_pycache_","README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
-                continue
-            item_path = os.path.join(src_path, item) 
-            
-            if os.path.isdir(item_path):  
-                Mermaid_Diagram = process_folder_mermaid_diagram(item_path) 
-            else:
+   
+    for item in os.listdir(folder_path):   
+        item_path = os.path.join(folder_path, item) 
+        
+        if os.path.isdir(item_path):  
+            Mermaid_Diagram = process_folder_mermaid_diagram(item_path) 
+        else:
+            if item_path.endswith(tuple(extensions)):
                 Mermaid_Diagram = file_mermaid_diagram(item_path)
-                
-            mermaid_diagram= combine_mermaid_diagram(folder_name,folder_structure,mermaid_diagram,
-                                                    item,Mermaid_Diagram)
-    else:    
-        for item in os.listdir(folder_path):   
-            if item in (".DS_Store", ".gitignore","_pycache_","README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
-                continue
-            item_path = os.path.join(folder_path, item) 
-            
-            if os.path.isdir(item_path):  
-                Mermaid_Diagram = process_folder_mermaid_diagram(item_path) 
             else:
-                Mermaid_Diagram = file_mermaid_diagram(item_path)
-                
-            mermaid_diagram= combine_mermaid_diagram(folder_name,folder_structure,mermaid_diagram,
-                                                    item,Mermaid_Diagram)
+                continue 
+            
+        mermaid_diagram= combine_mermaid_diagram(folder_name,folder_structure,mermaid_diagram,
+                                                item,Mermaid_Diagram)
     
     return mermaid_diagram
 
@@ -529,7 +532,7 @@ def combine_mermaid_flowchart(folder_name,
     '''
 
     llm_chain = LLMChain(
-        llm = ChatAnthropic(temperature= 0.8,model = "claude-2.0",max_tokens_to_sample=100000),
+        llm = ChatAnthropic(temperature= 0.8,anthropic_api_key = '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', model = "claude-2.0", max_tokens_to_sample=100000),
         prompt=PromptTemplate(input_variables=["folder_name","folder_structure","previous_mermaid_flowchart",
                                                "current_directory_name","current_directory_mermaid_flowchart"],partial_variables={"format_instructions":format_instructions}, template=template),
         verbose=True,
@@ -545,34 +548,19 @@ def process_folder_mermaid_flowchart(folder_path):
     mermaid_flowchart=""
     folder_name=os.path.basename(folder_path)
     folder_structure=os.listdir(folder_path)
-    src_path = os.path.join(folder_path, "src")
-
-    if os.path.exists(src_path) and os.path.isdir(src_path):
-        for item in os.listdir(src_path): 
-            
-            if item in (".DS_Store", ".gitignore","_pycache_","README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
-                continue
-            item_path = os.path.join(src_path, item) 
-            if os.path.isdir(item_path):  
-                Mermaid_Flowchart = process_folder_mermaid_flowchart(item_path) 
+    
+    for item in os.listdir(folder_path): 
+        item_path = os.path.join(folder_path, item) 
+        if os.path.isdir(item_path):  
+            Mermaid_Flowchart = process_folder_mermaid_flowchart(item_path) 
+        else:
+            if item_path.endswith(tuple(extensions)):
+                Mermaid_Flowchart = file_mermaid_flowchart(item_path) 
             else:
-                Mermaid_Flowchart = file_mermaid_flowchart(item_path)
-              
-            mermaid_flowchart= combine_mermaid_flowchart(folder_name,folder_structure,mermaid_flowchart,
-                                                    item,Mermaid_Flowchart)
-    else:
-        for item in os.listdir(folder_path): 
+                continue 
             
-            if item in (".DS_Store", ".gitignore","_pycache_","README.md","pom.xml",".idea",".mvn","mvnw.cmd","HELP.md","target","data","Data"):
-                continue
-            item_path = os.path.join(folder_path, item) 
-            if os.path.isdir(item_path):  
-                Mermaid_Flowchart = process_folder_mermaid_flowchart(item_path) 
-            else:
-                Mermaid_Flowchart = file_mermaid_flowchart(item_path)   
-            
-            mermaid_flowchart= combine_mermaid_flowchart(folder_name,folder_structure,mermaid_flowchart,
-                                                    item,Mermaid_Flowchart)
+        mermaid_flowchart= combine_mermaid_flowchart(folder_name,folder_structure,mermaid_flowchart,
+                                                item,Mermaid_Flowchart)
     
     return mermaid_flowchart
 
