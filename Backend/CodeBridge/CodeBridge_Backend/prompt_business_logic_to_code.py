@@ -322,3 +322,91 @@ sas_example4='''
         plt.ylabel('Count')
         plt.title('Bar Chart Example')
         plt.show()'''
+
+dspf_exampler4='''
+      User =
+       The provided DSPF (Display File) code defines a display interface for capturing a user's name and displaying a welcome message. 
+       It initializes the display, defines a record format for data organization, prompts the user to enter their name, provides an 
+       input field for name input, displays a welcome message that includes the user's name, and allows the user to exit the program
+       by pressing PF03. This code's core business logic involves user interaction and data presentation, with the "NAME" variable 
+       storing the user's input. The code uses DSPF-specific functions and parameters for display file configuration and interaction.
+      React Code = 
+            import React, { useState } from 'react';
+            function App() {
+            const [name, setName] = useState('');
+            const [message, setMessage] = useState('');
+            const handleNameChange = (event) => {
+                setName(event.target.value);
+            };
+            const handleSubmit = (event) => {
+                event.preventDefault();
+                setMessage(`Welcome, ${name}`);
+            };
+            return (
+                <div>
+                <h2>Enter Your Name:</h2>
+                <form onSubmit={handleSubmit}>
+                    <input
+                    type="text"
+                    value={name}
+                    onChange={handleNameChange}
+                    placeholder="Your Name"
+                    />
+                    <button type="submit">Submit</button>
+                </form>
+                <p>{message}</p>
+                </div>
+            );
+            }
+            export default App;
+'''  
+
+dspf_examplea4='''
+      User =
+       The provided DSPF (Display File) code defines a display interface for capturing a user's name and displaying a welcome message. 
+       It initializes the display, defines a record format for data organization, prompts the user to enter their name, provides an 
+       input field for name input, displays a welcome message that includes the user's name, and allows the user to exit the program
+       by pressing PF03. This code's core business logic involves user interaction and data presentation, with the "NAME" variable 
+       storing the user's input. The code uses DSPF-specific functions and parameters for display file configuration and interaction.
+      Angular Code = 
+        // Import required modules and components
+        import { Component, OnInit } from '@angular/core';
+
+        // Define the component
+        @Component({
+        selector: 'app-welcome',
+        templateUrl: './welcome.component.html',
+        styleUrls: ['./welcome.component.css']
+        })
+        export class WelcomeComponent implements OnInit {
+        // Define variables
+        name: string = '';
+        welcomeMessage: string = '';
+
+        // Initialize the display
+        ngOnInit() {
+            // Additional initialization code can be placed here if needed
+        }
+
+        // Function to handle user input
+        onNameInput() {
+            this.displayWelcomeMessage();
+        }
+
+        // Function to display welcome message
+        displayWelcomeMessage() {
+            if (this.name) {
+            this.welcomeMessage = `Welcome, ${this.name}!`;
+            } else {
+            this.welcomeMessage = '';
+            }
+        }
+
+        // Function to exit the program
+        exitProgram() {
+            // Add code here to handle program exit, e.g., routing to another component or action.
+        }
+        }
+
+
+'''

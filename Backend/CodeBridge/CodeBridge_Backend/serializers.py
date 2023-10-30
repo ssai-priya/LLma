@@ -41,3 +41,6 @@ class GithubRepositorySerializer(serializers.ModelSerializer):
     class Meta:
         model = GitHubRepository
         fields = '__all__'
+
+class ShareCodeSerializer(serializers.Serializer):
+    folder_structure_id = serializers.IntegerField()

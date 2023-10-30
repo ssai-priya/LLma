@@ -296,3 +296,74 @@ sas_example2='''
     }}
     Category -- BusinessLogic : 1..1 Has
     Count -- BusinessLogic : 1..1 Has'''
+
+dspf_exampler2='''
+    User=
+       The provided DSPF (Display File) code defines a display interface for capturing a user's name and displaying a welcome message. 
+       It initializes the display, defines a record format for data organization, prompts the user to enter their name, provides an 
+       input field for name input, displays a welcome message that includes the user's name, and allows the user to exit the program
+       by pressing PF03. This code's core business logic involves user interaction and data presentation, with the "NAME" variable 
+       storing the user's input. The code uses DSPF-specific functions and parameters for display file configuration and interaction.
+    Mermaid_Code=
+        classDiagram
+        class DisplayFile {
+            +initializeDisplay()
+            +defineRecordFormat()
+            +promptUserForName()
+            +displayWelcomeMessage(name)
+            +exitProgram()
+        }
+        class RecordFormat {
+            -name: String
+            -otherFields: String
+
+            +getName(): String
+            +setName(name: String)
+            +getOtherFields(): String
+            +setOtherFields(otherFields: String)
+        }
+        class User {
+            -name: String
+
+            +getName(): String
+            +setName(name: String)
+        }
+        class DisplayFile --|> RecordFormat : contains
+        DisplayFile --|> User : interacts with
+'''  
+
+dspf_examplea2='''
+    User=
+       The provided DSPF (Display File) code defines a display interface for capturing a user's name and displaying a welcome message. 
+       It initializes the display, defines a record format for data organization, prompts the user to enter their name, provides an 
+       input field for name input, displays a welcome message that includes the user's name, and allows the user to exit the program
+       by pressing PF03. This code's core business logic involves user interaction and data presentation, with the "NAME" variable 
+       storing the user's input. The code uses DSPF-specific functions and parameters for display file configuration and interaction.
+    Mermaid_Code=
+        classDiagram
+        class DisplayFile {
+            +initializeDisplay()
+            +defineRecordFormat()
+            +promptUserForName()
+            +displayWelcomeMessage(name)
+            +exitProgram()
+        }
+        class RecordFormat {
+            -name: String
+            -otherFields: String
+
+            +getName(): String
+            +setName(name: String)
+            +getOtherFields(): String
+            +setOtherFields(otherFields: String)
+        }
+        class User {
+            -name: String
+
+            +getName(): String
+            +setName(name: String)
+        }
+        class DisplayFile --|> RecordFormat : contains
+        DisplayFile --|> User : interacts with
+'''  
+

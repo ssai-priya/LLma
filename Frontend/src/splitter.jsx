@@ -8,7 +8,7 @@ import Box from '@mui/material/Box';
 import useAppStore from './assets/components/states';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit } from '@fortawesome/free-solid-svg-icons';
-import { Button, Divider, Drawer, Fab, IconButton, Input, Select,MenuItem, Modal } from '@mui/material';
+import { Button, Divider, Drawer, Fab, IconButton, Input, Select, MenuItem, Modal } from '@mui/material';
 import { Split } from "@geoffcox/react-splitter";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, duotoneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -135,9 +135,9 @@ export default function InteractiveArea(props) {
   const [javaLoader, setJavaLoader] = useState(false)
   const [selectedFile, setSelectedFile] = useState('');
   const [convertingFile, setConvertingFile] = useState('');
-  const [branch,setBranch] = useState('');
-  const [selectedfilelist,setSelectedfilelist] = useState([])
-  const [repinfo,setRepinfo] = useState(null)
+  const [branch, setBranch] = useState('');
+  const [selectedfilelist, setSelectedfilelist] = useState([])
+  const [repinfo, setRepinfo] = useState(null)
 
   const handleBranchChange = (event) => {
     setBranch(event.target.value);
@@ -156,8 +156,8 @@ export default function InteractiveArea(props) {
           Authorization: `Bearer ${jwtToken}`,
         },
         body: JSON.stringify({
-            'url' : repinfo.repository_url,
-            'name': repinfo.repository_name,
+          'url': repinfo.repository_url,
+          'name': repinfo.repository_name,
         })
       })
       const data = await response.json();
@@ -166,7 +166,7 @@ export default function InteractiveArea(props) {
     } catch (error) {
       console.log(error)
     }
-}
+  }
 
   const handleOpenModal = () => {
     getRepositoryList()
@@ -201,21 +201,21 @@ export default function InteractiveArea(props) {
   const handleCloseSelectFiles = () => {
     setOpenSelectFilesModal(false);
   };
-    // Define an array of options for your select boxes
-    const selectedOptions = [
-      'RPG',
-      'SAS',
-      'Assembly',
-      'Java',
-      // Add more options as needed
-    ];
-  
-    const generateFile = [
-      'Java',
-      'Python',
-      'Vector'
-  
-    ]
+  // Define an array of options for your select boxes
+  const selectedOptions = [
+    'RPG',
+    'SAS',
+    'Assembly',
+    'Java',
+    // Add more options as needed
+  ];
+
+  const generateFile = [
+    'Java',
+    'Python',
+    'Vector'
+
+  ]
 
 
   const fileContent = useAppStore((state) => state.fileContent);
@@ -236,8 +236,8 @@ export default function InteractiveArea(props) {
   const [flowchartCode, setFlowchartCode] = useState('')
   const [classDiagramCode, setClassDiagramCode] = useState('')
   const [javaCode, setJavaCode] = useState('');
-  const [gitreplist,setGitreplist] = useState([])
-  const [branchlist,setBranchlist]=useState([])
+  const [gitreplist, setGitreplist] = useState([])
+  const [branchlist, setBranchlist] = useState([])
   const [error, setError] = useState(''); // State to hold the error message
 
   useEffect(() => {
@@ -388,7 +388,7 @@ export default function InteractiveArea(props) {
       console.log(error)
     }
   }
-  const generateMermaidDiagramsNew = async (id) => {
+  const generateMermaidDiagramClassNew = async (id) => {
     setDiagramLoader(true)
     const jwtToken = sessionStorage.getItem("jwt");
     try {
@@ -400,7 +400,36 @@ export default function InteractiveArea(props) {
         },
         body: JSON.stringify({
           source: selectedFile,
-          destination: convertingFile
+          destination: convertingFile,
+          diagram_type: 'classDiagram'
+        }),
+      })
+      const data = await response.json();
+      console.log(data)
+      mermaid.contentLoaded()
+      setFlowchartCode(data.flowChart)
+      setClassDiagramCode(data.classDiagram)
+      setDiagramLoader(false)
+      mermaid.contentLoaded()
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+  const generateMermaidDiagramFlowNew = async (id) => {
+    setDiagramLoader(true)
+    const jwtToken = sessionStorage.getItem("jwt");
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/mermaid/${selectedFileID}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwtToken}`,
+        },
+        body: JSON.stringify({
+          source: selectedFile,
+          destination: convertingFile,
+          diagram_type: 'flowChart'
         }),
       })
       const data = await response.json();
@@ -425,7 +454,7 @@ export default function InteractiveArea(props) {
     // Clear the error message if no error
     setError('');
 
-    if(!error){
+    if (!error) {
       setIsGenButtonClicked(true)
       setLogicLoader(true)
       setDiagramLoader(true)
@@ -441,7 +470,7 @@ export default function InteractiveArea(props) {
           body: JSON.stringify({
             source: selectedFile,
           }),
-          
+
         });
         const dataGen = await genratedResponse.json();
         setBusinessLogic(dataGen.logic)
@@ -453,7 +482,7 @@ export default function InteractiveArea(props) {
         console.log(error)
       }
     }
-   
+
 
   };
 
@@ -523,394 +552,407 @@ export default function InteractiveArea(props) {
 
   return (
     <>
-     <div
-      className='w-full' style={{height:'95%'}}
-    >
+      <div
+        className='w-full' style={{ height: '95%' }}
+      >
 
-      <Split initialPrimarySize={(isGenButtonClicked) ? "50%" : "100%"} minPrimarySize="30%" renderSplitter={renderSplitter}>
-        <div className='h-full' style={{
-          background: 'black'
-        }}>
-          <div className='flex justify-center px-5'>
-            <div className='fileName' style={{
-              background: 'black'
-            }}>
-              <p style={{ color: '#1976d2', fontSize: '15px' }}>  {fileName} </p>
+        <Split initialPrimarySize={(isGenButtonClicked) ? "50%" : "100%"} minPrimarySize="30%" renderSplitter={renderSplitter}>
+          <div className='h-full' style={{
+            background: 'black'
+          }}>
+            <div className='flex justify-center px-5'>
+              <div className='fileName' style={{
+                background: 'black'
+              }}>
+                <p style={{ color: '#1976d2', fontSize: '15px' }}>  {fileName} </p>
+              </div>
             </div>
-          </div>
-          <div style={{ position: 'relative', width: '100%', height: '94.5%' }}>
+            <div style={{ position: 'relative', width: '100%', height: '94.5%' }}>
 
-            <div
-              className=' overflow-y-scroll overflow-x-scroll rounded-xl'
-              style={{
-                background: 'black',
-                paddingTop: '20px',
-                paddingLeft: '15px',
-                paddingRight: '15px',
-                width: '100%',
-                height: '100%'
+              <div
+                className=' overflow-y-scroll overflow-x-scroll rounded-xl'
+                style={{
+                  background: 'black',
+                  paddingTop: '20px',
+                  paddingLeft: '15px',
+                  paddingRight: '15px',
+                  width: '100%',
+                  height: '100%'
 
-              }}
-            >
-              <div className="generate_container">
-                <div className="generate_container-label">Choose Language:</div>
-                <div className="generate_container-select-container">
-                  <select
-                    value={selectedFile}
-                    onChange={(e) => setSelectedFile(e.target.value)}
-                  >
-                    <option value="">Source</option>
-                    {selectedOptions.map((option, index) => (
-                      <option key={index} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+                }}
+              >
+                <div className="generate_container">
+                  <div className="generate_container-label">Choose Language:</div>
+                  <div className="generate_container-select-container">
+                    <select
+                      value={selectedFile}
+                      onChange={(e) => setSelectedFile(e.target.value)}
+                    >
+                      <option value="">Source</option>
+                      {selectedOptions.map((option, index) => (
+                        <option key={index} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
 
-                  <div className="to">To</div>
+                    <div className="to">To</div>
 
-                  <select
-                    value={convertingFile}
-                    onChange={(e) => setConvertingFile(e.target.value)}
-                  >
-                    <option value="">Destination</option>
-                    {generateFile.map((option, index) => (
-                      <option key={index} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+                    <select
+                      value={convertingFile}
+                      onChange={(e) => setConvertingFile(e.target.value)}
+                    >
+                      <option value="">Destination</option>
+                      {generateFile.map((option, index) => (
+                        <option key={index} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <RPGLECodeBlock fileContent={fileContent} />
+              </div>
+
+              <div style={{ position: 'absolute', bottom: '32px', right: '25px' }}>
+                {error && <div className="error-message">{error}</div>}
+                <div className='flex flex-col justify-center items-center' style={{
+                  height: '7.5%',
+                }} >
+                  <Button variant='outlined' sx={{ color: '#39FF14' }} onClick={() => { generateBusinessLogic() }} >Generate</Button>
                 </div>
               </div>
-              <RPGLECodeBlock fileContent={fileContent} />
-            </div>
-
-            <div style={{ position: 'absolute', bottom: '32px', right: '25px' }}>
-            {error && <div className="error-message">{error}</div>}
-              <div className='flex flex-col justify-center items-center' style={{
-                height: '7.5%',
-              }} >
-                <Button variant='outlined' sx={{ color: '#39FF14' }} onClick={() => { generateBusinessLogic() }} >Generate</Button>
-              </div>
             </div>
           </div>
-        </div>
-        <div className='h-full w-full' style={{
-          background: 'black'
-        }}>
-          <div className='w-full' style={{ height: '100%' }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#000', width:'100%' }}>
-              <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600',overflowX:'scroll',width:'100%'}}>
-                <Tab sx={{ color: 'white' }} label="Business Logic" {...a11yProps(0)} />
-                <Tab sx={{ color: 'white' }} label="Mermaid Diagram" {...a11yProps(1)} />
-                <Tab sx={{ color: 'white' }} label="Java Code" {...a11yProps(2)} />
-                {/* <Tab sx={{ color: 'white' }} label="High level Business Logic" {...a11yProps(3)} /> */}
-              </Tabs>
-            </Box>
+          <div className='h-full w-full' style={{
+            background: 'black'
+          }}>
+            <div className='w-full' style={{ height: '100%' }}>
+              <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#000', width: '100%' }}>
+                <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600', overflowX: 'scroll', width: '100%' }}>
+                  <Tab sx={{ color: 'white' }} label="Business Logic" {...a11yProps(0)} />
+                  <Tab sx={{ color: 'white' }} label="Mermaid Diagram" {...a11yProps(1)} />
+                  <Tab sx={{ color: 'white' }} label="Java Code" {...a11yProps(2)} />
+                  {/* <Tab sx={{ color: 'white' }} label="High level Business Logic" {...a11yProps(3)} /> */}
+                </Tabs>
+              </Box>
 
 
-            <CustomTabPanel value={value} index={0}>
+              <CustomTabPanel value={value} index={0}>
 
-              <div style={{
-                height: '100%'
-              }} >
-                <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#001', width:'100%' }}>
-                  <Tabs value={blvalue} onChange={handleBLChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600',overflowX:'scroll',width:'100%'}}>
-                    <Tab sx={{ color: 'white' }} label="High Level" {...a11yProps(0)} />
-                    <Tab sx={{ color: 'white' }} label="Individual" {...a11yProps(1)} />
-                  </Tabs>
-                </Box>
-                <CustomTabPanel value={blvalue} index={0}>
+                <div style={{
+                  height: '100%'
+                }} >
+                  <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#001', width: '100%' }}>
+                    <Tabs value={blvalue} onChange={handleBLChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600', overflowX: 'scroll', width: '100%' }}>
+                      <Tab sx={{ color: 'white' }} label="High Level" {...a11yProps(0)} />
+                      <Tab sx={{ color: 'white' }} label="Individual" {...a11yProps(1)} />
+                    </Tabs>
+                  </Box>
+                  <CustomTabPanel value={blvalue} index={0}>
 
-              <div style={{
-                height: '92%'
-              }} >
-                
-                {
-                  (highlogicLoader) ? <>
+                    <div style={{
+                      height: '92%'
+                    }} >
 
-                    {<div className='flex h-full w-full justify-center items-center'  ><CircularProgress /></div>}
-                  </>
-                    :
-                    <>
                       {
+                        (highlogicLoader) ? <>
 
-                        (isHighEditing) ?
-                          <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '92%' }}>
-                            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                              <textarea className='vscDark vscDarkPre w-full' style={{ width: '100%', height: '98%' }} type="text" value={highBusinessLogic} onChange={handleHighInputChange} />
-                              <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
-                                <IconButton onClick={() => handleHighSaveClick(selectedLogicID)}>
-                                  <Save sx={{ color: '#FFF' }} />
-                                </IconButton>
-                              </div>
-                            </div>
-                          </div>
-
-
+                          {<div className='flex h-full w-full justify-center items-center'  ><CircularProgress /></div>}
+                        </>
                           :
-                          <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '100%' }}>
-                            <div style={{ position: 'relative', width: '100%' }}>
-                              <LogicBlock businessLogic={highBusinessLogic} />
-                              <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
-                                <IconButton onClick={handleHighEditClick}>
-                                  <Edit sx={{ color: '#FFF' }} />
-                                </IconButton>
-                              </div>
-                            </div>
-                          </div>
+                          <>
+                            {
 
-                      }</>
-                }
+                              (isHighEditing) ?
+                                <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '92%' }}>
+                                  <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                                    <textarea className='vscDark vscDarkPre w-full' style={{ width: '100%', height: '98%' }} type="text" value={highBusinessLogic} onChange={handleHighInputChange} />
+                                    <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
+                                      <IconButton onClick={() => handleHighSaveClick(selectedLogicID)}>
+                                        <Save sx={{ color: '#FFF' }} />
+                                      </IconButton>
+                                    </div>
+                                  </div>
+                                </div>
 
-              </div>
-                </CustomTabPanel>
-                <CustomTabPanel value={blvalue} index={1}>
 
-              <div style={{
-                height: '92%'
-              }} >
-                
-                {
-                  (logicLoader) ? <>
+                                :
+                                <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '100%' }}>
+                                  <div style={{ position: 'relative', width: '100%' }}>
+                                    <LogicBlock businessLogic={highBusinessLogic} />
+                                    <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
+                                      <IconButton onClick={handleHighEditClick}>
+                                        <Edit sx={{ color: '#FFF' }} />
+                                      </IconButton>
+                                    </div>
+                                  </div>
+                                </div>
 
-                    {<div className='flex h-full w-full justify-center items-center'  ><CircularProgress /></div>}
-                  </>
-                    :
-                    <>
+                            }</>
+                      }
+
+                    </div>
+                  </CustomTabPanel>
+                  <CustomTabPanel value={blvalue} index={1}>
+
+                    <div style={{
+                      height: '92%'
+                    }} >
+
                       {
+                        (logicLoader) ? <>
 
-                        (isEditing) ?
-                          <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '92%' }}>
-                            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                              <textarea className='vscDark vscDarkPre w-full' style={{ width: '100%', height: '98%' }} type="text" value={businessLogic} onChange={handleInputChange} />
-                              <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
-                                <IconButton onClick={() => handleSaveClick(selectedLogicID)}>
-                                  <Save sx={{ color: '#FFF' }} />
-                                </IconButton>
-                              </div>
-                            </div>
-                          </div>
-
-
+                          {<div className='flex h-full w-full justify-center items-center'  ><CircularProgress /></div>}
+                        </>
                           :
-                          <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '100%' }}>
-                            <div style={{ position: 'relative', width: '100%' }}>
-                              <LogicBlock businessLogic={businessLogic} />
-                              <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
-                                <IconButton onClick={handleEditClick}>
-                                  <Edit sx={{ color: '#FFF' }} />
-                                </IconButton>
-                              </div>
-                            </div>
-                          </div>
+                          <>
+                            {
 
-                      }</>
-                }
+                              (isEditing) ?
+                                <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '92%' }}>
+                                  <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                                    <textarea className='vscDark vscDarkPre w-full' style={{ width: '100%', height: '98%' }} type="text" value={businessLogic} onChange={handleInputChange} />
+                                    <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
+                                      <IconButton onClick={() => handleSaveClick(selectedLogicID)}>
+                                        <Save sx={{ color: '#FFF' }} />
+                                      </IconButton>
+                                    </div>
+                                  </div>
+                                </div>
 
-              </div>
-                </CustomTabPanel>
-              </div>
-            </CustomTabPanel>
 
-            <CustomTabPanel value={value} index={1}>
-              <div style={{ background: 'black', width: '100%', height: '100%' }}>
-              <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#001', width:'100%' }}>
-                  <Tabs value={mdvalue} onChange={handleMDChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600',overflowX:'scroll',width:'100%'}}>
-                    <Tab sx={{ color: 'white' }} label="High Level" {...a11yProps(0)} />
-                    <Tab sx={{ color: 'white' }} label="Individual" {...a11yProps(1)} />
-                  </Tabs>
-                </Box>
-                <CustomTabPanel value={mdvalue} index={1}>
-              <div className='flex p-5' style={{ background: 'black', width: '100%', height: '93%' }}>
+                                :
+                                <div className='flex py-5 px-4' style={{ background: 'black', width: '100%', height: '100%' }}>
+                                  <div style={{ position: 'relative', width: '100%' }}>
+                                    <LogicBlock businessLogic={businessLogic} />
+                                    <div style={{ position: 'absolute', top: '13px', right: '5px' }}>
+                                      <IconButton onClick={handleEditClick}>
+                                        <Edit sx={{ color: '#FFF' }} />
+                                      </IconButton>
+                                    </div>
+                                  </div>
+                                </div>
 
-                {
-                  (diagramLoader) ? <>
-                    <div className='flex h-full w-full justify-center items-center'  ><CircularProgress /></div>
-                  </> :
-                    <div style={{ position: 'relative', width: '100%' }}>
-                      <div className='vscDark vscDarkPre' style={{ height: '93%', borderRadius: '15px' }}   >
+                            }</>
+                      }
 
-                        {
-                          (flowchartCode === '') ?
-                            <></> :
-                            <div className=''>
-                              <p className='text-lg font-black'>
-                                FlowChart
-                              </p>
-                              <MermaidDiagram mermaidCode={flowchartCode} />
-                            </div>
+                    </div>
+                  </CustomTabPanel>
+                </div>
+              </CustomTabPanel>
+
+              <CustomTabPanel value={value} index={1}>
+                <div style={{ background: 'black', width: '100%', height: '100%' }}>
+                  <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#001', width: '100%' }}>
+                    <Tabs value={mdvalue} onChange={handleMDChange} aria-label="basic tabs example" sx={{ color: 'black', fontWeight: '600', overflowX: 'scroll', width: '100%' }}>
+                      <Tab sx={{ color: 'white' }} label="High Level" {...a11yProps(0)} />
+                      <Tab sx={{ color: 'white' }} label="Individual" {...a11yProps(1)} />
+                    </Tabs>
+                  </Box>
+                  <CustomTabPanel value={mdvalue} index={1}>
+                    <div className='flex p-5' style={{ background: 'black', width: '100%', height: '93%' }}>
+
+                      {
+                        (diagramLoader) ? <>
+                          <div className='flex h-full w-full justify-center items-center'  ><CircularProgress /></div>
+                        </> :
+                          <div style={{ position: 'relative', width: '100%' }}>
+                            <div className=' vscDark vscDarkPre' style={{ height: '93%', borderRadius: '15px' }}   >
+
+                              {
+                                (flowchartCode === '') ?
+                                  <></> :
+                                  <div className=''>
+                                    <p className='text-lg font-black'>
+                                      FlowChart
+                                    </p>
+                                    <div className='flex h-full w-full'>
+                                      <MermaidDiagram mermaidCode={flowchartCode} />
+                                      <div className='flex flex-col h-full bg-black w-5' style={{ position: 'relative', top: '25px', right: '30px' }}>
+                                        <Fab size='small' sx={{ backgroundColor: '#42a5f5', marginTop: '10px', ":hover": { backgroundColor: '#64b5f6' } }} onClick={() => generateMermaidDiagramFlowNew(selectedLogicID)}>
+                                          <ReplayOutlined sx={{ color: '#FFF' }} />
+                                        </Fab>
+                                      </div>
+                                      </div>
+                                    </div>
                         }
-                        <Divider classes={{ root: 'customDivider' }} sx={{ bgcolor: '42a5f5' }} ></Divider>
-                        {
-                          (classDiagramCode === '') ?
-                            <></> :
-                            <div className='mt-2'>
-                              <p className='text-lg font-black'>
-                                Class Diagram
-                              </p>
-                              <MermaidDiagram mermaidCode={classDiagramCode} />
-                            </div>
+                                    <Divider classes={{ root: 'customDivider' }} sx={{ bgcolor: '42a5f5' }} ></Divider>
+                                    {
+                                      (classDiagramCode === '') ?
+                                        <></> :
+                                        <div className='flex mt-2'>
+                                          <p className='text-lg font-black'>
+                                            Class Diagram
+                                          </p>
+                                          <div className='flex'>
+                                          <MermaidDiagram mermaidCode={classDiagramCode} />
+                                          <div className='flex flex-col h-full bg-black w-5' style={{ position: 'relative', top: '25px', right: '30px' }}>
+                                            <Fab size='small' sx={{ backgroundColor: '#42a5f5', ":hover": { backgroundColor: '#64b5f6' } }} onClick={() => generateMermaidDiagramClassNew(selectedLogicID)}>
+                                              <ReplayOutlined sx={{ color: '#FFF' }} />
+                                            </Fab>
+                                          </div>
+                                          </div>
+                                        </div>
 
 
-                        }
+
+                                    }
 
 
-                      </div>
+                                  </div>
                       <div className='flex flex-col h-full bg-black w-5' style={{ position: 'absolute', top: '25px', right: '30px' }}>
                         <Fab size='small' sx={{ backgroundColor: '#42a5f5', ":hover": { backgroundColor: '#64b5f6' } }} variant='outlined' onClick={() => handleDownload('mmd')}>
                           <Download sx={{ color: '#FFF' }} />
                         </Fab>
-                        <Fab size='small' sx={{ backgroundColor: '#42a5f5', marginTop: '10px', ":hover": { backgroundColor: '#64b5f6' } }} onClick={() => generateMermaidDiagramsNew(selectedLogicID)}>
-                          <ReplayOutlined sx={{ color: '#FFF' }} />
-                        </Fab>
+                        
                       </div>
 
-                    </div>
+                            </div>
                 }
 
-              </div>
+                          </div>
 
             </CustomTabPanel>
 
-              </div>
+                </div>
 
-            </CustomTabPanel>
-            <CustomTabPanel value={value} index={2}>
-              <div className='flex py-7 px-4' style={{ background: 'black', width: '100%', height: '100%' }}>
+              </CustomTabPanel>
+              <CustomTabPanel value={value} index={2}>
+                <div className='flex py-7 px-4' style={{ background: 'black', width: '100%', height: '100%' }}>
 
-                {
-                  (javaLoader) ?
-                    <>
-                      <div className='flex h-full w-full justify-center items-center'  ><CircularProgress /></div>
-                    </>
-                    :
-                    <div style={{ position: 'relative', width: '100%' }}>
-                      <AceEditor style={{ width: '100%', height: '95%', borderRadius: '15px' }}
-                        mode="java"
-                        theme="clouds_midnight"
-                        onChange={onChange}
-                        name="UNIQUE_ID_OF_DIV"
-                        editorProps={{ $blockScrolling: true }}
-                        setOptions={{
-                          enableBasicAutocompletion: true,
-                          enableLiveAutocompletion: true,
-                          enableSnippets: true
-                        }}
-                        value={javaCode} />
-                      <div className='flex flex-col' style={{ position: 'absolute', top: '15px', right: '10px' }}>
-                        <Fab size='small' sx={{ backgroundColor: '#42a5f5', ":hover": { backgroundColor: '#64b5f6' } }} variant='outlined' onClick={() => handleDownload('java')}>
-                          <Download sx={{ color: '#FFF' }} />
-                        </Fab>
-                        <Fab size='small' sx={{ backgroundColor: '#42a5f5', marginTop: '10px', ":hover": { backgroundColor: '#64b5f6' } }} onClick={() => generateJavaCodeNew(selectedLogicID)}>
-                          <ReplayOutlined sx={{ color: '#FFF' }} />
-                        </Fab>
+                  {
+                    (javaLoader) ?
+                      <>
+                        <div className='flex h-full w-full justify-center items-center'  ><CircularProgress /></div>
+                      </>
+                      :
+                      <div style={{ position: 'relative', width: '100%' }}>
+                        <AceEditor style={{ width: '100%', height: '95%', borderRadius: '15px' }}
+                          mode="java"
+                          theme="clouds_midnight"
+                          onChange={onChange}
+                          name="UNIQUE_ID_OF_DIV"
+                          editorProps={{ $blockScrolling: true }}
+                          setOptions={{
+                            enableBasicAutocompletion: true,
+                            enableLiveAutocompletion: true,
+                            enableSnippets: true
+                          }}
+                          value={javaCode} />
+                        <div className='flex flex-col' style={{ position: 'absolute', top: '15px', right: '10px' }}>
+                          <Fab size='small' sx={{ backgroundColor: '#42a5f5', ":hover": { backgroundColor: '#64b5f6' } }} variant='outlined' onClick={() => handleDownload('java')}>
+                            <Download sx={{ color: '#FFF' }} />
+                          </Fab>
+                          <Fab size='small' sx={{ backgroundColor: '#42a5f5', marginTop: '10px', ":hover": { backgroundColor: '#64b5f6' } }} onClick={() => generateJavaCodeNew(selectedLogicID)}>
+                            <ReplayOutlined sx={{ color: '#FFF' }} />
+                          </Fab>
+                        </div>
                       </div>
-                    </div>
 
-                }
-
+                  }
 
 
 
-              </div>
+
+                </div>
 
 
-            </CustomTabPanel>
+              </CustomTabPanel>
+            </div>
           </div>
-        </div>
-      </Split>
+        </Split>
 
-     
-    </div >
-    <div className='status-bar'>
-      <div className='git-bar'>
-       
+
+      </div >
+      <div className='status-bar'>
+        <div className='git-bar'>
+
           <div className='git-bar-left'>
-          <Typography>
-                  Branch
-          </Typography>
-          <Select className='select' value={branch} onChange={handleBranchChange}>
-            <MenuItem value={10}>Main</MenuItem>
-            <MenuItem value={20}>Branch 1</MenuItem>
-            <MenuItem value={30}>Branch 2</MenuItem>
-          </Select>
+            <Typography>
+              Branch
+            </Typography>
+            <Select className='select' value={branch} onChange={handleBranchChange}>
+              <MenuItem value={10}>Main</MenuItem>
+              <MenuItem value={20}>Branch 1</MenuItem>
+              <MenuItem value={30}>Branch 2</MenuItem>
+            </Select>
           </div>
-        
+
           <div className='mr-4'>
-          <Button variant='contained' onClick={handleOpenModal}>
-                  <Typography >
-                    Commit & Push
-                  </Typography>
-                </Button>
-          </div>    
+            <Button variant='contained' onClick={handleOpenModal}>
+              <Typography >
+                Commit & Push
+              </Typography>
+            </Button>
+          </div>
+        </div>
       </div>
-    </div>
-    <Modal
-    open={openModal}
-    onClose={handleCloseModal}
-    aria-labelledby="modal-title"
-    aria-describedby="modal-description"
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}
-  >
-    <div className="modal-content bg-background">
-          <GitPushModal handleOpenBranchModal={handleOpenBranchModal} handleOpenRepModal={handleOpenRepModal} handleCloseModal={handleCloseModal} gitreplist={gitreplist} handleOpenSelectFiles={handleOpenSelectFiles} selectedfilelist={selectedfilelist} setSelectedfilelist={setSelectedfilelist} branchlist={branchlist} setBranchlist={setBranchlist} getBranchList={getBranchList} setRepinfo={setRepinfo}/>
+      <Modal
+        open={openModal}
+        onClose={handleCloseModal}
+        aria-labelledby="modal-title"
+        aria-describedby="modal-description"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div className="modal-content bg-background">
+          <GitPushModal handleOpenBranchModal={handleOpenBranchModal} handleOpenRepModal={handleOpenRepModal} handleCloseModal={handleCloseModal} gitreplist={gitreplist} handleOpenSelectFiles={handleOpenSelectFiles} selectedfilelist={selectedfilelist} setSelectedfilelist={setSelectedfilelist} branchlist={branchlist} setBranchlist={setBranchlist} getBranchList={getBranchList} setRepinfo={setRepinfo} />
         </div>
-  </Modal>
-  <Modal
-    open={openBranchModal}
-    onClose={handleCloseBranchModal}
-    aria-labelledby="modal-title"
-    aria-describedby="modal-description"
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}
-  >
-    <div className="modal-content bg-background">
-          <NewBranchModal handleCloseBranchModal={handleCloseBranchModal} branchlist={branchlist} repinfo={repinfo} getBranchList={getBranchList}/>
+      </Modal>
+      <Modal
+        open={openBranchModal}
+        onClose={handleCloseBranchModal}
+        aria-labelledby="modal-title"
+        aria-describedby="modal-description"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div className="modal-content bg-background">
+          <NewBranchModal handleCloseBranchModal={handleCloseBranchModal} branchlist={branchlist} repinfo={repinfo} getBranchList={getBranchList} />
         </div>
-  </Modal>
-  <Modal
-    open={openRepModal}
-    onClose={handleCloseRepModal}
-    aria-labelledby="modal-title"
-    aria-describedby="modal-description"
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}
-  >
-    <div className="modal-content bg-background">
-          <NewRepModal handleCloseRepModal={handleCloseRepModal}/>
+      </Modal>
+      <Modal
+        open={openRepModal}
+        onClose={handleCloseRepModal}
+        aria-labelledby="modal-title"
+        aria-describedby="modal-description"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div className="modal-content bg-background">
+          <NewRepModal handleCloseRepModal={handleCloseRepModal} />
         </div>
-  </Modal>
-  <Modal
-    open={openSelectFilesModal}
-    onClose={handleCloseSelectFiles}
-    aria-labelledby="modal-title"
-    aria-describedby="modal-description"
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}
-  >
-    <div className="modal-content bg-background">
+      </Modal>
+      <Modal
+        open={openSelectFilesModal}
+        onClose={handleCloseSelectFiles}
+        aria-labelledby="modal-title"
+        aria-describedby="modal-description"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div className="modal-content bg-background">
           {/* <NewRepModal handleCloseSelectFiles={handleCloseSelectFiles}/> */}
-          <SelectFilesModal folderId={props.folderId} openSelectFilesModal={openSelectFilesModal} selectedfilelist={selectedfilelist} setSelectedfilelist={setSelectedfilelist} handleCloseSelectFiles={handleCloseSelectFiles}/>
+          <SelectFilesModal folderId={props.folderId} openSelectFilesModal={openSelectFilesModal} selectedfilelist={selectedfilelist} setSelectedfilelist={setSelectedfilelist} handleCloseSelectFiles={handleCloseSelectFiles} />
         </div>
-  </Modal>
+      </Modal>
 
 
     </>
-     
-    
+
+
   )
 }
