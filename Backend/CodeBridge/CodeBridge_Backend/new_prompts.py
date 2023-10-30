@@ -50,6 +50,10 @@ def code_to_business_logic(code,source):
     1.Analyze the provided {source} code to comprehend its purpose.
     2.Identify and abstract the key algorithmic steps and logic used in the {source} code.
     3.Express this logic in a high-level, language-agnostic format.
+    4.Identify the type of code and if there is any database, other files or ui interaction.
+    5.Any important information about the file structure should be identified and added to the interactions. 
+    6.Please specify these interactions towards the end of the generated response in a well formatted manner.
+    7.Be as verbose as needed.
     Make sure that the output provides a clear and concise representation of the business logic within the {source} code. If the {source} code is complex,
     please include comments or explanations to clarify the logic.I am providing an example how to generate business logic 
     using the {source} code as shown in the following example.
@@ -57,9 +61,8 @@ def code_to_business_logic(code,source):
     Example:
     {example_code}
     
-    Don't give any iniial words and sentence except business logic.
     Now the User will provide {source} code, please generate correct buisness logic as shown in above example.
-    
+    Share business logic and related files like database , ui and other files as part of the response.
     User: {input}
     Business_Logic:'''
 
@@ -112,8 +115,8 @@ def business_logic_to_mermaid_diagram(logic,source, destination):
     Example:
     {example_code}
     
-    Now the User will provide business logic, please generate correct and running code for mermaid class diagram as shown in above 
-    example without any initial text in a JSON format with "mermaidClassDiagram" as the key.
+    Now the User will provide business logic as well as associated files, please generate correct and running code for mermaid class diagram as shown in above 
+    example without any initial text in a JSON format with "mermaid_class_diagram_code" as the key.
     
     User: {input}
     Mermaid_Code:
@@ -175,14 +178,15 @@ def business_logic_to_mermaid_flowchart(logic,source, destination):
         1. Review the provided business logic.
         2. Identify key components, decisions, and flow control in the logic.
         3. Create a Mermaid flow chart diagram that illustrates the flow of logic, including decisions, loops, and data flow.
-        4. Ensure the Mermaid flow chartdiagram is clear, well-structured, and accurately represents the business logic.
+        4. Ensure that the files , databases and other UI elements which might be present are properly shown.
+        5. Ensure the Mermaid flow chartdiagram is clear, well-structured, and accurately represents the business logic.
     I am providing an example how to generate mermaid flow chart diagram using the business logic as shown in the following example.
 
     Example:
     {example_code}
     
     Now the User will provide business logic,generate correct and running code for mermaid Flowchart diagram as shown in 
-    above example without any initial text in a JSON format with "mermaidFlowchart" as the key and make sure that the 
+    above example without any initial text in a JSON format with "mermaid_flowchart_code" as the key and make sure that the 
     blocks areproperly linked in the code.
     
     User: {input}
@@ -199,7 +203,7 @@ def business_logic_to_mermaid_flowchart(logic,source, destination):
     result=parser.parse(mermaid_flowchart)
     return result['mermaid_flowchart_code']
 
-def business_logic_to_code(logic,source, destination):
+def business_logic_to_code(logic,source, destination,srccode):
     
     if source.lower() not in ["sql", "python", "java","mongodb","react","angular","rpg","sas"]:
         return "Invalid source specified."
@@ -239,6 +243,12 @@ def business_logic_to_code(logic,source, destination):
         1. Review the provided business logic.
         2. Identify key components, decisions, and flow control in the logic.
         3. Translate the Business logic into clear and functional {destination} code.
+        4. Make sure that the function refered to in the generated code exists or create it in full.
+        5. Create unit tests for every function created.
+        6. Assume any files that we interact with are database tables.
+        7. Make smart assumptions of the file structure in order to output more complete code.
+        8. Do not return any TODOs and actually write code based on assumptions.
+        9. Return all the methods created in a comment.
 
     Please ensure that the generated {destination} code is well-commented and adheres to best practices for readability and functionality.
     I am providing an example how to generate {destination} code using the business logic of {source} code as shown in the following example.

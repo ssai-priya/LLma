@@ -503,7 +503,7 @@ class CodeGenAPIViewNew(APIView):
         logic = self.get_object(file_id, logic_id)
         logic_str = logic.logic
         # var="RPG"
-        generated_code = business_logic_to_code(logic_str,source, destination) 
+        generated_code = business_logic_to_code(logic_str,source, destination,file.file) 
         code_data = {
             'code': generated_code,
             'logic': logic_id,
